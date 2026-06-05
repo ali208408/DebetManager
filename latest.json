@@ -1,11 +1,15 @@
-﻿{
-    "version":  "1.0.1",
-    "notes":  "Hide the background console window and keep update failures silent.",
-    "pub_date":  "2026-06-05T15:45:55Z",
+{
+    "version":  "1.0.11",
+    "notes":  "يعرض إشعارا للعميل عند توفر تحديث، ويترك له اختيار التحديث الآن أو لاحقا.",
+    "pub_date":  "2026-06-05T23:54:36Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRlFjYUY1RWtXYW5DRnVzMkxGSnlyODhTdXlXdE1lSEFzRWVkNlFxYTJ5eTMxWGVmZDZwbGdSNEw2cm16Rm1qQU16NzEyUWRzY1JORHFsQ0dkSW1pa1FZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNjc0MzM5CWZpbGU6RGVidGJvb2tfMS4wLjFfeDY0LXNldHVwLmV4ZQpwSCtjSFg0WXEySFlmcHlsL1p6WWs5dzByRXJrSTZmMUNyQlVQQjFNSDFjUlIrVG1OTGNFdVlBQ2dsM2VhQ1pQaTFwR0I1eG9ZN2NJWWpxVWFVcEVDZz09Cg==",
-                                             "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debtbook_1.0.1_x64-setup.exe"
-                                         }
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRmVuRkw4M2RWeGdmcGUyZzQrbGFkR2JqcHhudk5NbzZLQjR6aTY5aW9IVEIyazYycHg1WEV1SHNVbWdNVHF4d2FVa1RyVnBWbzAvWnlVcEFTUVR5bHdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNzAzNjM4CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMTFfeDY0LXNldHVwLmV4ZQp2WTRldDVzZUxLaXJVcE8yRmttcXN3YktIbFBhV3dCcXdOeWw0akhYN0YvRWJCOTJZbzVkaTN6WUZ4Z2J2V2ZYZWgxS0JaSXZRbHh1QjVQS3YvZU9BZz09Cg==",
+                                             "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.11_x64-setup.exe"
+                                         },
+                      "windows-x86_64-msi":  {
+                                                 "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRlN2WHFRS0JXTFc5VGl3SXBjazYvWVBqcE5UcDBNMTlGVyswZUFQWDBHWWtMTWw0cStaR1ZycFdKbTVCdkt2Y1pLOFRqSzdkTCtIQkxSWVY1aWIwaVFvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNzAzNjM4CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMTFfeDY0X2VuLVVTLm1zaQpVNDQwSGQ2endSR1FQbFhxWEljNkVJWmZ4ek1KMzRPS0s5Mk0zaDZrWXlWMVV3eEtSbjRTOVZ3QWNVTWlLNnVFYi8wTDdtQlUxdDVGQnNERFBOTnBDUT09Cg==",
+                                                 "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.11_x64_en-US.msi"
+                                             }
                   }
 }
