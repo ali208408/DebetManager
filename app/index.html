@@ -173,9 +173,12 @@
   <div class="login-card">
     <div class="login-logo">📒</div>
     <div class="login-title">دفتر المديونيات</div>
-    <div class="login-sub">أدخل كلمة المرور للدخول</div>
+    <div class="login-sub">أدخل اسم المستخدم وكلمة المرور للدخول</div>
     <div class="login-field">
-      <input type="password" id="passInput" placeholder="كلمة المرور" onkeydown="if(event.key==='Enter')tryLogin()" />
+      <input type="text" id="userInput" placeholder="اسم المستخدم" autocomplete="username" onkeydown="if(event.key==='Enter')tryLogin()" />
+    </div>
+    <div class="login-field">
+      <input type="password" id="passInput" placeholder="كلمة المرور" autocomplete="current-password" onkeydown="if(event.key==='Enter')tryLogin()" />
       <button class="eye-btn" onclick="toggleEye()" id="eyeBtn">👁</button>
     </div>
     <button class="login-btn" onclick="tryLogin()">دخول</button>
@@ -185,7 +188,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.4</span></div>
+      <div class="app-version">Version <span>1.0.5</span></div>
     </div>
   </div>
 </div>
@@ -297,12 +300,8 @@
     <div class="panel-title">⚙️ الإعدادات</div>
     <div class="settings-section">
       <div class="setting-row">
-        <div class="setting-title">🔑 تغيير كلمة المرور</div>
-        <div class="pass-input-row"><input type="password" id="oldPass" placeholder="كلمة المرور الحالية" /></div>
-        <div class="pass-input-row"><input type="password" id="newPass1" placeholder="كلمة المرور الجديدة" /></div>
-        <div class="pass-input-row"><input type="password" id="newPass2" placeholder="تأكيد كلمة المرور الجديدة" /></div>
-        <button class="btn btn-warning" onclick="changePassword()">💾 حفظ كلمة المرور</button>
-        <div id="passChangeMsg" style="font-size:13px;margin-top:8px;display:none"></div>
+        <div class="setting-title">🔑 بيانات الدخول</div>
+        <div style="font-size:12px;color:var(--txt2);line-height:1.8">اسم المستخدم: <strong style="color:var(--txt)">admin</strong><br>كلمة المرور ثابتة ومطلوبة قبل مسح البيانات.</div>
       </div>
       <div class="setting-row" style="background:rgba(239,68,68,.05);border-color:rgba(239,68,68,.2)">
         <div class="setting-title" style="color:#f87171">⚠️ خيارات خطرة</div>
@@ -315,7 +314,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.4</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.5</span></div>
   </footer>
 </div>
 </div>
@@ -394,11 +393,23 @@
   </div>
 </div>
 
+<!-- RESET CONFIRM MODAL -->
+<div class="modal-overlay" id="resetConfirmModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header"><div class="modal-title">تأكيد مسح كل البيانات</div><button class="close-btn" onclick="closeResetConfirm()">✕</button></div>
+    <div class="form-group" style="margin-bottom:12px"><label>اسم المستخدم</label><input type="text" id="resetUser" placeholder="admin" style="width:100%" /></div>
+    <div class="form-group" style="margin-bottom:12px"><label>كلمة المرور</label><input type="password" id="resetPass" placeholder="كلمة المرور" style="width:100%" onkeydown="if(event.key==='Enter')confirmResetApp()" /></div>
+    <div id="resetError" style="display:none;color:#f87171;font-size:12px;margin-bottom:12px">بيانات الدخول غير صحيحة</div>
+    <button class="btn btn-danger" style="width:100%" onclick="confirmResetApp()">مسح كل البيانات نهائياً</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 // ===== AUTH =====
-const DEFAULT_PASS='1234';
+const ADMIN_USER='admin';
+const ADMIN_PASS='01065260779aA@326';
 let failCount=parseInt(localStorage.getItem('db_fails')||'0');
 let lockUntil=parseInt(localStorage.getItem('db_lock')||'0');
 let lockTimer=null, passVisible=false;
@@ -407,12 +418,13 @@ function hash(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCod
 
 function tryLogin(){
   const now=Date.now(); if(now<lockUntil) return;
-  const input=document.getElementById('passInput').value;
-  const saved=localStorage.getItem('db_pass_hash')||hash(DEFAULT_PASS);
-  if(hash(input)===saved){
+  const user=document.getElementById('userInput').value.trim();
+  const pass=document.getElementById('passInput').value;
+  if(isAdminCredential(user,pass)){
     failCount=0;localStorage.setItem('db_fails','0');localStorage.removeItem('db_lock');
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('mainApp').style.display='block';
+    document.getElementById('userInput').value='';
     document.getElementById('passInput').value='';
     document.getElementById('loginError').classList.remove('show');
     document.getElementById('attemptsInfo').textContent='';
@@ -427,27 +439,17 @@ function tryLogin(){
 function startLockCountdown(sec){
   document.getElementById('loginError').classList.remove('show');
   document.getElementById('lockedMsg').classList.add('show');
+  document.getElementById('userInput').disabled=true;
   document.getElementById('passInput').disabled=true;
   document.getElementById('attemptsInfo').textContent='';
   let s=sec;document.getElementById('lockCountdown').textContent=s;
-  lockTimer=setInterval(()=>{s--;document.getElementById('lockCountdown').textContent=s;if(s<=0){clearInterval(lockTimer);document.getElementById('lockedMsg').classList.remove('show');document.getElementById('passInput').disabled=false;}},1000);
+  lockTimer=setInterval(()=>{s--;document.getElementById('lockCountdown').textContent=s;if(s<=0){clearInterval(lockTimer);document.getElementById('lockedMsg').classList.remove('show');document.getElementById('userInput').disabled=false;document.getElementById('passInput').disabled=false;}},1000);
 }
 function toggleEye(){passVisible=!passVisible;document.getElementById('passInput').type=passVisible?'text':'password';document.getElementById('eyeBtn').textContent=passVisible?'🙈':'👁';}
 function logout(){if(!confirm('هل تريد الخروج؟'))return;document.getElementById('mainApp').style.display='none';document.getElementById('loginScreen').style.display='flex';if(countdownInterval){clearInterval(countdownInterval);countdownInterval=null;}}
-function changePassword(){
-  const oldP=document.getElementById('oldPass').value,newP1=document.getElementById('newPass1').value,newP2=document.getElementById('newPass2').value;
-  const msg=document.getElementById('passChangeMsg'),saved=localStorage.getItem('db_pass_hash')||hash(DEFAULT_PASS);
-  msg.style.display='block';
-  if(hash(oldP)!==saved){msg.style.color='#f87171';msg.textContent='❌ كلمة المرور الحالية غير صحيحة';return;}
-  if(newP1.length<4){msg.style.color='#f87171';msg.textContent='❌ قصيرة جداً (4 أحرف على الأقل)';return;}
-  if(newP1!==newP2){msg.style.color='#f87171';msg.textContent='❌ كلمتا المرور غير متطابقتين';return;}
-  localStorage.setItem('db_pass_hash',hash(newP1));
-  ['oldPass','newPass1','newPass2'].forEach(id=>document.getElementById(id).value='');
-  msg.style.color='#34d399';msg.textContent='✅ تم تغيير كلمة المرور';
-  showToast('✅ تم تغيير كلمة المرور');setTimeout(()=>msg.style.display='none',3000);
-}
+function isAdminCredential(user,pass){return user===ADMIN_USER&&pass===ADMIN_PASS;}
 window.addEventListener('load',()=>{
-  if(!localStorage.getItem('db_pass_hash'))localStorage.setItem('db_pass_hash',hash(DEFAULT_PASS));
+  localStorage.removeItem('db_pass_hash');
   const now=Date.now();if(now<lockUntil){const rem=Math.ceil((lockUntil-now)/1000);startLockCountdown(rem);}
 });
 
@@ -596,7 +598,22 @@ function confirmAddDebt(){
   openClient(activeClientId);showToast('✅ تم إضافة المديونية');
 }
 function deleteClient(){if(!confirm('هل تريد حذف هذا العميل؟'))return;clients=clients.filter(c=>c.id!==activeClientId);save();renderClients();closeModal();showToast('تم الحذف');}
-function resetApp(){if(!confirm('⚠️ هل أنت متأكد؟'))return;if(!confirm('تأكيد أخير: مسح كل البيانات!'))return;clients=[];save();renderClients();showToast('تم المسح');}
+function resetApp(){
+  if(!confirm('⚠️ هل أنت متأكد؟'))return;
+  document.getElementById('resetUser').value='';
+  document.getElementById('resetPass').value='';
+  document.getElementById('resetError').style.display='none';
+  document.getElementById('resetConfirmModal').classList.add('open');
+  setTimeout(()=>document.getElementById('resetUser').focus(),100);
+}
+function closeResetConfirm(){document.getElementById('resetConfirmModal').classList.remove('open');}
+function confirmResetApp(){
+  const user=document.getElementById('resetUser').value.trim();
+  const pass=document.getElementById('resetPass').value;
+  if(!isAdminCredential(user,pass)){document.getElementById('resetError').style.display='block';return;}
+  if(!confirm('تأكيد أخير: مسح كل البيانات!'))return;
+  clients=[];save();renderClients();closeResetConfirm();showToast('تم المسح');
+}
 
 // AUTO BACKUP (AUTOMATIC - Always Running)
 function getBackupData(autoBackup=true){return JSON.stringify({version:1,exportDate:new Date().toISOString(),autoBackup,clients},null,2);}
