@@ -5,9 +5,7 @@ pub fn run() {
         .setup(|app| {
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(error) = update(app_handle).await {
-                    eprintln!("update check failed: {error}");
-                }
+                let _ = update(app_handle).await;
             });
             Ok(())
         })
@@ -22,9 +20,7 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
         update
             .download_and_install(
                 |_chunk_length, _content_length| {},
-                || {
-                    println!("update downloaded");
-                },
+                || {},
             )
             .await?;
         app.restart();
