@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>دفتر المديونيات</title>
+<title>Debet Manager</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -18,7 +18,8 @@
   body { background: var(--db); color: var(--txt); font-family: 'Segoe UI', Tahoma, sans-serif; direction: rtl; min-height: 100vh; }
   #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(ellipse at 60% 30%, rgba(37,99,235,0.15) 0%, transparent 60%), var(--db); }
   .login-card { background: var(--db2); border: 1px solid var(--brd2); border-radius: 20px; padding: 40px 36px; width: 100%; max-width: 380px; text-align: center; }
-  .login-logo { width: 64px; height: 64px; background: linear-gradient(135deg, var(--acc), #7c3aed); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 20px; }
+  .login-logo { width: 76px; height: 76px; border-radius: 18px; display: block; object-fit: cover; margin: 0 auto 16px; box-shadow: 0 0 28px rgba(59,130,246,.28); }
+  .login-brand-logo { width: 220px; max-width: 100%; display:block; margin: 0 auto 14px; }
   .login-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
   .login-sub { font-size: 13px; color: var(--txt2); margin-bottom: 32px; }
   .login-field { position: relative; margin-bottom: 14px; }
@@ -34,11 +35,12 @@
   .attempts-info { font-size: 12px; color: var(--txt3); margin-top: 14px; }
   #mainApp { display: none; }
   #app { max-width: 1000px; margin: 0 auto; padding: 16px; }
-  .header { background: linear-gradient(135deg, var(--db4), var(--acc) 200%); border: 1px solid var(--brd2); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; }
-  .header-icon { width: 48px; height: 48px; background: rgba(255,255,255,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .header { background: linear-gradient(135deg, var(--db4), var(--acc) 200%); border: 1px solid var(--brd2); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; }
+  .header-icon { width: 54px; height: 54px; border-radius: 12px; object-fit: cover; flex-shrink:0; box-shadow:0 0 18px rgba(59,130,246,.28); }
   .header h1 { font-size: 20px; font-weight: 700; color: #fff; }
   .header p { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 2px; }
   .header-actions { margin-right: auto; display: flex; gap: 8px; align-items: center; }
+  .header-brand-logo { width: 180px; max-height: 72px; object-fit: contain; margin-right: 10px; }
   .logout-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 12px; padding: 7px 14px; cursor: pointer; }
   .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
   .stat-card { background: var(--card); border: 1px solid var(--brd); border-radius: var(--radius); padding: 16px; position: relative; overflow: hidden; }
@@ -171,8 +173,9 @@
 <!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
-    <div class="login-logo">📒</div>
-    <div class="login-title">دفتر المديونيات</div>
+    <img class="login-logo" src="assets/app-icon.png" alt="Debet Manager icon" />
+    <img class="login-brand-logo" src="assets/brand-logo.png" alt="Debet Manager" />
+    <div class="login-title">Debet Manager</div>
     <div class="login-sub">أدخل اسم المستخدم وكلمة المرور للدخول</div>
     <div class="login-field">
       <input type="text" id="userInput" placeholder="اسم المستخدم" autocomplete="username" onkeydown="if(event.key==='Enter')tryLogin()" />
@@ -188,7 +191,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.5</span></div>
+      <div class="app-version">Version <span>1.0.6</span></div>
     </div>
   </div>
 </div>
@@ -197,9 +200,10 @@
 <div id="mainApp">
 <div id="app">
   <div class="header">
-    <div class="header-icon">📒</div>
-    <div><h1>دفتر المديونيات</h1><p>إدارة مديونيات العملاء والتسديدات</p></div>
+    <img class="header-icon" src="assets/app-icon.png" alt="Debet Manager icon" />
+    <div><h1>Debet Manager</h1><p>إدارة مديونيات العملاء والتسديدات</p></div>
     <div class="header-actions">
+      <img class="header-brand-logo" src="assets/brand-logo.png" alt="Debet Manager" />
       <button class="btn btn-ghost" onclick="switchTab('backup')" style="font-size:12px">💾 نسخ احتياطي</button>
       <button class="logout-btn" onclick="logout()">🔒 خروج</button>
     </div>
@@ -314,7 +318,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.5</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.6</span></div>
   </footer>
 </div>
 </div>
