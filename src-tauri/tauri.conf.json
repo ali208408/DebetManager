@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Debtbook",
+  "version": "1.0.0",
+  "identifier": "com.debetfinal.debtbook",
+  "build": {
+    "frontendDist": "../app"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "دفتر المديونيات",
+        "width": 1100,
+        "height": 760,
+        "minWidth": 860,
+        "minHeight": 620,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/icon.ico"],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE1Q0FDNkQwNEM0NTQ1REQKUldUZFJVVk0wTWJLRlUrOCtjUXBxdStrcHdJL0dPbnZoWWp0UldxWGY3RDZVbm5tR3lJRnpJZTMK",
+      "endpoints": [
+        "https://github.com/ali208408/DebetManager/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}
