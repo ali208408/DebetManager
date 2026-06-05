@@ -3,5 +3,10 @@
   "identifier": "default",
   "description": "Default desktop capability for the debtbook app.",
   "windows": ["main"],
-  "permissions": ["core:default", "updater:default"]
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    "fs:allow-write-text-file",
+    "updater:default"
+  ]
 }

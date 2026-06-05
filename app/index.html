@@ -162,6 +162,8 @@
   .app-footer { margin:18px 0 4px; padding:14px 10px 4px; border-top:1px solid var(--brd); text-align:center; color:var(--txt2); font-size:12px; line-height:1.8; direction:ltr; }
   .app-footer strong { color:var(--txt); font-weight:600; }
   .app-version { color:var(--acc3); font-family:Consolas, monospace; font-size:11px; }
+  .login-footer { margin-top:22px; padding-top:16px; border-top:1px solid var(--brd); color:var(--txt2); font-size:12px; line-height:1.8; direction:ltr; }
+  .login-footer strong { color:var(--txt); font-weight:600; }
 </style>
 </head>
 <body>
@@ -180,6 +182,11 @@
     <div class="login-error" id="loginError">كلمة المرور غير صحيحة</div>
     <div class="locked-msg" id="lockedMsg">🔒 تم تجميد الدخول<br>يمكنك المحاولة بعد:<div class="lock-countdown" id="lockCountdown">30</div></div>
     <div class="attempts-info" id="attemptsInfo"></div>
+    <div class="login-footer">
+      <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
+      <div>Technical support : <strong>01000747708</strong></div>
+      <div class="app-version">Version <span>1.0.4</span></div>
+    </div>
   </div>
 </div>
 
@@ -238,18 +245,18 @@
       <div class="auto-backup-card active" id="autoBackupCard">
         <div class="auto-top">
           <div class="backup-icon">🔄</div>
-          <div class="backup-info"><div class="backup-name">النسخ التلقائي المستمر</div><div class="backup-desc">كل دقيقة بنفس الاسم — يكتب فوق القديمة</div></div>
+          <div class="backup-info"><div class="backup-name">النسخ التلقائي المستمر</div><div class="backup-desc">اختر مكان الحفظ مرة واحدة، وبعدها يتم استبدال نفس الملف كل دقيقة</div></div>
           <span class="toggle-label" style="color:var(--grn);font-weight:700">✅ مُفعّل</span>
         </div>
         <div class="filename-box">
-          <div style="flex:1"><div style="font-size:11px;color:var(--txt2);margin-bottom:4px">اسم الملف الثابت:</div><div class="filename-value">daftar_madyoniat.json</div></div>
-          <div class="overwrite-badge">✅ يكتب فوق القديم</div>
+          <div style="flex:1"><div style="font-size:11px;color:var(--txt2);margin-bottom:4px">مكان الحفظ:</div><div class="filename-value" id="backupPathLabel">لم يتم اختيار مكان الحفظ</div></div>
+          <button class="btn btn-ghost" onclick="chooseBackupLocation()" style="font-size:12px;padding:6px 10px">اختيار</button>
         </div>
         <div class="countdown-section">
           <div class="ring-wrap"><svg width="56" height="56" viewBox="0 0 56 56"><circle class="ring-bg" cx="28" cy="28" r="23"/><circle class="ring-fg" id="ringFg" cx="28" cy="28" r="23"/></svg><div class="ring-text" id="ringText">60</div></div>
           <div class="countdown-info">
             <div class="countdown-title">النسخ التالي خلال <span id="countdown">60</span> ثانية</div>
-            <div class="countdown-sub">الاسم ثابت → يحل محل القديم</div>
+            <div class="countdown-sub">يتم مسح محتوى النسخة القديمة وحفظ النسخة الجديدة فوقها</div>
             <div class="last-backup-time" id="lastBackupTime"></div>
           </div>
           <button class="btn btn-success" onclick="doAutoBackupNow()" style="font-size:12px;padding:8px 14px">احفظ الآن</button>
@@ -308,7 +315,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.3</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.4</span></div>
   </footer>
 </div>
 </div>
@@ -449,6 +456,7 @@ let clients=JSON.parse(localStorage.getItem('debtbook_clients')||'[]');
 let activeClientId=null;
 let countdownInterval=null,countdownSec=1800,autoBackupCount=0;
 const FIXED='daftar_madyoniat.json',CIRC=2*Math.PI*23;
+const BACKUP_PATH_KEY='debtbook_backup_path';
 
 function save(){localStorage.setItem('debtbook_clients',JSON.stringify(clients));updateStats();}
 function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='err'?'#ef4444':type==='info'?'#2563eb':'#10b981';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
@@ -591,12 +599,36 @@ function deleteClient(){if(!confirm('هل تريد حذف هذا العميل؟'
 function resetApp(){if(!confirm('⚠️ هل أنت متأكد؟'))return;if(!confirm('تأكيد أخير: مسح كل البيانات!'))return;clients=[];save();renderClients();showToast('تم المسح');}
 
 // AUTO BACKUP (AUTOMATIC - Always Running)
+function getBackupData(autoBackup=true){return JSON.stringify({version:1,exportDate:new Date().toISOString(),autoBackup,clients},null,2);}
+function getBackupPath(){return localStorage.getItem(BACKUP_PATH_KEY)||'';}
+function setBackupPath(path){
+  if(path)localStorage.setItem(BACKUP_PATH_KEY,path);
+  const label=document.getElementById('backupPathLabel');
+  if(label) label.textContent=path||'لم يتم اختيار مكان الحفظ';
+}
+function hasTauriFs(){return !!(window.__TAURI__?.dialog?.save&&window.__TAURI__?.fs?.writeTextFile);}
+async function chooseBackupLocation(){
+  if(!hasTauriFs()){showToast('اختيار مكان الحفظ يعمل داخل تطبيق سطح المكتب فقط','err');return;}
+  const selected=await window.__TAURI__.dialog.save({
+    defaultPath: getBackupPath()||FIXED,
+    filters: [{name:'JSON Backup',extensions:['json']}]
+  });
+  if(!selected)return;
+  setBackupPath(selected);
+  await writeBackupFile(selected,true);
+}
+async function writeBackupFile(path,manual=false){
+  await window.__TAURI__.fs.writeTextFile(path,getBackupData(true));
+  autoBackupCount++;
+  document.getElementById('lastBackupTime').textContent='✅ آخر نسخة: '+new Date().toLocaleTimeString('ar-EG');
+  showToast(manual?'💾 تم حفظ النسخة في المكان المختار':'🔄 تم تحديث النسخة الاحتياطية','info');
+}
 function startAutoBackup(){
   const card=document.getElementById('autoBackupCard');
   if(card) card.classList.add('active');
+  setBackupPath(getBackupPath());
   countdownSec=60;
   updateRing(60);
-  doAutoBackupNow();
   countdownInterval=setInterval(()=>{
     countdownSec--;
     updateRing(countdownSec);
@@ -615,17 +647,12 @@ function updateRing(s){
   document.getElementById('ringFg').style.stroke=c;
   document.getElementById('ringText').style.color=c;
 }
-function doAutoBackupNow(){
-  const data=JSON.stringify({version:1,exportDate:new Date().toISOString(),autoBackup:true,clients},null,2);
-  const blob=new Blob([data],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=FIXED;
-  a.click();
-  URL.revokeObjectURL(a.href);
-  autoBackupCount++;
-  document.getElementById('lastBackupTime').textContent='✅ آخر نسخة: '+new Date().toLocaleTimeString('ar-EG');
-  showToast(autoBackupCount===1?'💾 تم إنشاء النسخة':'🔄 تم تحديث النسخة','info');
+async function doAutoBackupNow(){
+  const path=getBackupPath();
+  if(!path){showToast('اختر مكان حفظ النسخة الاحتياطية أولاً','info');return;}
+  if(!hasTauriFs()){showToast('النسخ فوق ملف ثابت يعمل داخل تطبيق سطح المكتب فقط','err');return;}
+  try{await writeBackupFile(path,true);}
+  catch(err){showToast('تعذر حفظ النسخة: '+(err.message||err),'err');}
 }
 function exportJSON(){const blob=new Blob([JSON.stringify({version:1,exportDate:new Date().toISOString(),clients},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='دفتر_المديونيات_'+new Date().toISOString().slice(0,10)+'.json';a.click();document.getElementById('lastJson').textContent='آخر تصدير: '+today();showToast('✅ تم تحميل JSON');}
 function exportExcel(){let csv='\uFEFF';csv+='اسم العميل,رقم الهاتف,العنوان,إجمالي المديونية,إجمالي المسدد,المتبقي,عدد الحركات\n';clients.forEach(c=>{csv+=`"${c.name}","${c.phone||''}","${c.address||''}",${getDebt(c)},${getPaid(c)},${getRemaining(c)},${c.transactions.length}\n`;});csv+='\n\nتفاصيل الحركات\nالعميل,النوع,المبلغ,الملاحظة,التاريخ\n';clients.forEach(c=>{c.transactions.forEach(t=>{csv+=`"${c.name}","${t.type==='debt'?'مديونية':'تسديد'}",${t.amount},"${t.note||''}","${t.date}"\n`;});});const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='دفتر_المديونيات_'+new Date().toISOString().slice(0,10)+'.csv';a.click();document.getElementById('lastExcel').textContent='آخر تصدير: '+today();showToast('✅ تم تحميل Excel');}
