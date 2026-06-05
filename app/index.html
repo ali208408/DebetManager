@@ -1,10 +1,11 @@
-
+﻿
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Debet Manager</title>
+<link rel="icon" href="assets/app-icon.png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -190,7 +191,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.8</span></div>
+      <div class="app-version">Version <span>1.0.9</span></div>
     </div>
   </div>
 </div>
@@ -202,7 +203,6 @@
     <img class="header-icon" src="assets/app-icon.png" alt="Debet Manager icon" />
     <div><h1>Debet Manager</h1><p>إدارة مديونيات العملاء والتسديدات</p></div>
     <div class="header-actions">
-      <img class="header-brand-logo" src="assets/brand-logo.png" alt="Debet Manager" />
       <button class="btn btn-ghost" onclick="switchTab('backup')" style="font-size:12px">💾 نسخ احتياطي</button>
       <button class="logout-btn" onclick="logout()">🔒 خروج</button>
     </div>
@@ -252,7 +252,10 @@
         <div class="auto-top">
           <div class="backup-icon">🔄</div>
           <div class="backup-info"><div class="backup-name">النسخ التلقائي المستمر</div><div class="backup-desc">اختر مجلد الحفظ، ويتم الاحتفاظ بآخر 20 نسخة فقط بأسماء تحتوي على التاريخ والساعة</div></div>
-          <span class="toggle-label" style="color:var(--grn);font-weight:700">✅ مُفعّل</span>
+          <div class="toggle-wrap">
+            <span class="toggle-label" id="autoBackupLabel" style="color:var(--grn);font-weight:700">✅ مُفعّل</span>
+            <label class="toggle"><input type="checkbox" id="autoBackupToggle" checked onchange="toggleAutoBackup(this.checked)"><span class="slider"></span></label>
+          </div>
         </div>
         <div class="filename-box">
           <div style="flex:1"><div style="font-size:11px;color:var(--txt2);margin-bottom:4px">مجلد الحفظ:</div><div class="filename-value" id="backupPathLabel">لم يتم اختيار مجلد الحفظ</div></div>
@@ -265,7 +268,7 @@
             <div class="countdown-sub">يتم إنشاء نسخة بتاريخ ووقت الحفظ، وبعد 20 نسخة يتم حذف الأقدم</div>
             <div class="last-backup-time" id="lastBackupTime"></div>
           </div>
-          <button class="btn btn-success" onclick="doAutoBackupNow()" style="font-size:12px;padding:8px 14px">احفظ الآن</button>
+          <button class="btn btn-success" onclick="doAutoBackupNow(true)" style="font-size:12px;padding:8px 14px">احفظ الآن</button>
         </div>
       </div>
       <div class="backup-option">
@@ -322,7 +325,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.8</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.9</span></div>
   </footer>
 </div>
 </div>
@@ -394,7 +397,7 @@
 <!-- ADD DEBT MODAL -->
 <div class="modal-overlay" id="addDebtModal2">
   <div class="modal" style="max-width:400px">
-    <div class="modal-header"><div class="modal-title">إضافة مديونية جديدة</div><button class="close-btn" onclick="document.getElementById('addDebtModal2').classList.remove('open')">✕</button></div>
+    <div class="modal-header"><div class="modal-title">إضافة مديونية جديدة</div><button class="close-btn" onclick="closeAddDebtModal()">✕</button></div>
     <div class="form-group" style="margin-bottom:12px"><label>المبلغ *</label><input type="number" id="addDebtAmount" placeholder="0.00" style="width:100%" /></div>
     <div class="form-group" style="margin-bottom:16px"><label>ملاحظة</label><input type="text" id="addDebtNote" placeholder="وصف المديونية..." style="width:100%" /></div>
     <button class="btn btn-primary" style="width:100%" onclick="confirmAddDebt()">إضافة</button>
@@ -419,20 +422,50 @@
 const DEFAULT_ADMIN_USER='admin';
 const DEFAULT_ADMIN_PASS='01065260779aA@326';
 const AUTH_USER_KEY='debet_manager_auth_user';
-const AUTH_PASS_KEY='debet_manager_auth_pass';
+const AUTH_PASS_HASH_KEY='debet_manager_auth_pass_hash';
+const LEGACY_AUTH_PASS_KEY='debet_manager_auth_pass';
+const DATA_KEY='debtbook_clients_secure';
+const LEGACY_DATA_KEY='debtbook_clients';
+const DATA_SALT='DebetManager.local.v1';
+let sessionPass='';
+let sessionKey=null;
 let failCount=parseInt(localStorage.getItem('db_fails')||'0');
 let lockUntil=parseInt(localStorage.getItem('db_lock')||'0');
 let lockTimer=null, passVisible=false;
 
-function hash(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return h.toString(36);}
 function getAdminUser(){return localStorage.getItem(AUTH_USER_KEY)||DEFAULT_ADMIN_USER;}
-function getAdminPass(){return localStorage.getItem(AUTH_PASS_KEY)||DEFAULT_ADMIN_PASS;}
+async function sha256(text){
+  const bytes=new TextEncoder().encode(text);
+  const hash=await crypto.subtle.digest('SHA-256',bytes);
+  return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function getAdminPassHash(){
+  const stored=localStorage.getItem(AUTH_PASS_HASH_KEY);
+  if(stored)return stored;
+  const legacy=localStorage.getItem(LEGACY_AUTH_PASS_KEY);
+  const hash=await sha256(legacy||DEFAULT_ADMIN_PASS);
+  localStorage.setItem(AUTH_PASS_HASH_KEY,hash);
+  localStorage.removeItem(LEGACY_AUTH_PASS_KEY);
+  return hash;
+}
+async function deriveCryptoKey(pass){
+  const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:new TextEncoder().encode(DATA_SALT),iterations:120000,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+function toB64(bytes){return btoa(String.fromCharCode(...bytes));}
+function fromB64(text){return Uint8Array.from(atob(text),c=>c.charCodeAt(0));}
+function uid(prefix='id'){return prefix+'_'+crypto.randomUUID();}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function isValidPhone(v){return !v||/^01[0-9]{9}$/.test(v);}
 
-function tryLogin(){
+async function tryLogin(){
   const now=Date.now(); if(now<lockUntil) return;
   const user=document.getElementById('userInput').value.trim();
   const pass=document.getElementById('passInput').value;
-  if(isAdminCredential(user,pass)){
+  if(await isAdminCredential(user,pass)){
+    sessionPass=pass;
+    sessionKey=await deriveCryptoKey(pass);
+    await loadClients();
     failCount=0;localStorage.setItem('db_fails','0');localStorage.removeItem('db_lock');
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('mainApp').style.display='block';
@@ -441,6 +474,7 @@ function tryLogin(){
     document.getElementById('loginError').classList.remove('show');
     document.getElementById('attemptsInfo').textContent='';
     updateStats();renderClients();
+    startAutoBackup();
   } else {
     failCount++;localStorage.setItem('db_fails',failCount);
     document.getElementById('loginError').classList.add('show');
@@ -458,20 +492,23 @@ function startLockCountdown(sec){
   lockTimer=setInterval(()=>{s--;document.getElementById('lockCountdown').textContent=s;if(s<=0){clearInterval(lockTimer);document.getElementById('lockedMsg').classList.remove('show');document.getElementById('userInput').disabled=false;document.getElementById('passInput').disabled=false;}},1000);
 }
 function toggleEye(){passVisible=!passVisible;document.getElementById('passInput').type=passVisible?'text':'password';document.getElementById('eyeBtn').textContent=passVisible?'🙈':'👁';}
-function logout(){if(!confirm('هل تريد الخروج؟'))return;document.getElementById('mainApp').style.display='none';document.getElementById('loginScreen').style.display='flex';if(countdownInterval){clearInterval(countdownInterval);countdownInterval=null;}}
-function isAdminCredential(user,pass){return user===getAdminUser()&&pass===getAdminPass();}
-function changeCredentials(){
+function logout(){if(!confirm('هل تريد الخروج؟'))return;document.getElementById('mainApp').style.display='none';document.getElementById('loginScreen').style.display='flex';stopAutoBackup();}
+async function isAdminCredential(user,pass){return user===getAdminUser()&&(await sha256(pass))===await getAdminPassHash();}
+async function changeCredentials(){
   const currentUser=document.getElementById('currentUser').value.trim();
   const currentPass=document.getElementById('currentPass').value;
   const newUser=document.getElementById('newUser').value.trim();
   const newPass=document.getElementById('newPass').value;
   const msg=document.getElementById('credentialMsg');
   msg.style.display='block';
-  if(!isAdminCredential(currentUser,currentPass)){msg.style.color='#f87171';msg.textContent='❌ بيانات الدخول الحالية غير صحيحة';return;}
+  if(!(await isAdminCredential(currentUser,currentPass))){msg.style.color='#f87171';msg.textContent='❌ بيانات الدخول الحالية غير صحيحة';return;}
   if(!newUser){msg.style.color='#f87171';msg.textContent='❌ اسم المستخدم الجديد مطلوب';return;}
   if(newPass.length<8){msg.style.color='#f87171';msg.textContent='❌ كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف';return;}
   localStorage.setItem(AUTH_USER_KEY,newUser);
-  localStorage.setItem(AUTH_PASS_KEY,newPass);
+  localStorage.setItem(AUTH_PASS_HASH_KEY,await sha256(newPass));
+  sessionPass=newPass;
+  sessionKey=await deriveCryptoKey(newPass);
+  await encryptClients();
   ['currentUser','currentPass','newUser','newPass'].forEach(id=>document.getElementById(id).value='');
   msg.style.color='#34d399';msg.textContent='✅ تم حفظ بيانات الدخول الجديدة';
   showToast('✅ تم تغيير بيانات الدخول');
@@ -482,14 +519,40 @@ window.addEventListener('load',()=>{
 });
 
 // ===== DATA =====
-let clients=JSON.parse(localStorage.getItem('debtbook_clients')||'[]');
+let clients=[];
 let activeClientId=null;
 let countdownInterval=null,countdownSec=1800,autoBackupCount=0;
 const FIXED='daftar_madyoniat.json',CIRC=2*Math.PI*23;
 const BACKUP_DIR_KEY='debtbook_backup_dir';
+const AUTO_BACKUP_KEY='debtbook_auto_backup_enabled';
 const MAX_BACKUPS=20;
 
-function save(){localStorage.setItem('debtbook_clients',JSON.stringify(clients));updateStats();}
+async function encryptClients(){
+  if(!sessionKey)return;
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const encoded=new TextEncoder().encode(JSON.stringify(clients));
+  const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},sessionKey,encoded));
+  localStorage.setItem(DATA_KEY,JSON.stringify({v:1,iv:toB64(iv),data:toB64(cipher)}));
+  localStorage.removeItem(LEGACY_DATA_KEY);
+}
+async function loadClients(){
+  const secure=localStorage.getItem(DATA_KEY);
+  if(secure&&sessionKey){
+    try{
+      const payload=JSON.parse(secure);
+      const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(payload.iv)},sessionKey,fromB64(payload.data));
+      clients=JSON.parse(new TextDecoder().decode(plain)||'[]');
+      return;
+    }catch{
+      clients=[];
+      showToast('تعذر فتح البيانات المشفرة. تحقق من بيانات الدخول.','err');
+      return;
+    }
+  }
+  clients=JSON.parse(localStorage.getItem(LEGACY_DATA_KEY)||'[]');
+  await encryptClients();
+}
+function save(){encryptClients();updateStats();}
 function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='err'?'#ef4444':type==='info'?'#2563eb':'#10b981';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 function fmt(n){return Number(n).toLocaleString('ar-EG',{minimumFractionDigits:0,maximumFractionDigits:2})+' ج';}
 function getDebt(c){return c.transactions.filter(t=>t.type==='debt').reduce((s,t)=>s+t.amount,0);}
@@ -528,12 +591,12 @@ function renderClients(search=''){
   if(!f.length){list.innerHTML='<div class="empty-state">لا يوجد نتائج</div>';return;}
   list.innerHTML=f.map(c=>{
     const rem=getRemaining(c);
-    return `<div class="client-row" onclick="openClient('${c.id}')">
-      <div class="client-avatar" style="background:${c.color}">${initials(c.name)}</div>
+    return `<div class="client-row" onclick="openClient('${esc(c.id)}')">
+      <div class="client-avatar" style="background:${esc(c.color)}">${esc(initials(c.name))}</div>
       <div class="client-info">
-        <div class="client-name">${c.name}</div>
-        <div class="client-meta">${c.phone||'بدون هاتف'} • ${c.transactions.length} حركة</div>
-        ${c.address?`<div class="client-address">📍 ${c.address}</div>`:''}
+        <div class="client-name">${esc(c.name)}</div>
+        <div class="client-meta">${esc(c.phone||'بدون هاتف')} • ${c.transactions.length} حركة</div>
+        ${c.address?`<div class="client-address">📍 ${esc(c.address)}</div>`:''}
       </div>
       <div><div class="debt-badge ${rem===0?'debt-zero':''}">${rem>0?fmt(rem):'✅ مسدد'}</div></div>
     </div>`;
@@ -544,12 +607,14 @@ const colors=['#2563eb','#7c3aed','#db2777','#ea580c','#0891b2','#059669','#d977
 
 function addClient(){
   const name=document.getElementById('newName').value.trim();
+  const phone=document.getElementById('newPhone').value.trim();
   const dv=parseFloat(document.getElementById('newDebt').value);
   if(!name){showToast('الاسم مطلوب','err');return;}
+  if(!isValidPhone(phone)){showToast('رقم الهاتف يجب أن يكون 11 رقم ويبدأ بـ 01','err');return;}
   if(isNaN(dv)||dv<0){showToast('المبلغ غير صحيح','err');return;}
   const d=document.getElementById('newDate').value;
-  clients.push({id:Date.now().toString(),name,phone:document.getElementById('newPhone').value.trim(),address:document.getElementById('newAddress').value.trim(),color:colors[clients.length%colors.length],
-    transactions:dv>0?[{id:Date.now().toString(),type:'debt',amount:dv,note:document.getElementById('newNotes').value.trim()||'مديونية ابتدائية',date:d?new Date(d).toLocaleDateString('ar-EG'):today()}]:[]});
+  clients.push({id:uid('client'),name,phone,address:document.getElementById('newAddress').value.trim(),color:colors[clients.length%colors.length],
+    transactions:dv>0?[{id:uid('tx'),type:'debt',amount:dv,note:document.getElementById('newNotes').value.trim()||'مديونية ابتدائية',date:d?new Date(d).toLocaleDateString('ar-EG'):today()}]:[]});
   save();renderClients();
   ['newName','newPhone','newDebt','newNotes','newAddress'].forEach(id=>document.getElementById(id).value='');
   showToast('✅ تم إضافة العميل');switchTab('clients');
@@ -561,8 +626,8 @@ function openClient(id){
   document.getElementById('modalClientName').textContent=c.name;
   document.getElementById('modalClientSub').textContent=c.phone||'';
   let info='';
-  if(c.phone)info+=`<span>📞 <strong>${c.phone}</strong></span>`;
-  if(c.address)info+=`<span>📍 <strong>${c.address}</strong></span>`;
+  if(c.phone)info+=`<span>📞 <strong>${esc(c.phone)}</strong></span>`;
+  if(c.address)info+=`<span>📍 <strong>${esc(c.address)}</strong></span>`;
   const infoEl=document.getElementById('modalClientInfo');
   infoEl.innerHTML=info||'<span style="color:var(--txt3);font-size:12px">لا توجد بيانات إضافية</span>';
   infoEl.style.display='flex';
@@ -570,7 +635,7 @@ function openClient(id){
   document.getElementById('modalTotalPaid').textContent=fmt(getPaid(c));
   document.getElementById('modalRemaining').textContent=fmt(getRemaining(c));
   document.getElementById('modalTransactions').innerHTML=c.transactions.length?
-    [...c.transactions].reverse().map(t=>`<div class="tx-row ${t.type==='debt'?'tx-debt':'tx-pay'}"><div><div style="font-size:13px;color:var(--txt)">${t.note||(t.type==='debt'?'مديونية':'تسديد')}</div><div class="tx-date">${t.date}</div></div><div class="${t.type==='debt'?'tx-amount-debt':'tx-amount-pay'}">${t.type==='debt'?'-':'+'}${fmt(t.amount)}</div></div>`).join(''):
+    [...c.transactions].reverse().map(t=>`<div class="tx-row ${t.type==='debt'?'tx-debt':'tx-pay'}"><div><div style="font-size:13px;color:var(--txt)">${esc(t.note||(t.type==='debt'?'مديونية':'تسديد'))}</div><div class="tx-date">${esc(t.date)}</div></div><div class="${t.type==='debt'?'tx-amount-debt':'tx-amount-pay'}">${t.type==='debt'?'-':'+'}${fmt(t.amount)}</div></div>`).join(''):
     '<div style="text-align:center;padding:20px;color:var(--txt3);font-size:13px">لا توجد حركات</div>';
   document.getElementById('clientModal').classList.add('open');
 }
@@ -595,11 +660,12 @@ function closeEditModal(){
 
 function saveEdit(){
   const name=document.getElementById('editName').value.trim();
+  const phone=document.getElementById('editPhone').value.trim();
   if(!name){showToast('الاسم لا يمكن أن يكون فارغاً','err');return;}
+  if(!isValidPhone(phone)){showToast('رقم الهاتف يجب أن يكون 11 رقم ويبدأ بـ 01','err');return;}
   const c=clients.find(x=>x.id===activeClientId);
-  const oldName=c.name;
   c.name=name;
-  c.phone=document.getElementById('editPhone').value.trim();
+  c.phone=phone;
   c.address=document.getElementById('editAddress').value.trim();
   save();renderClients();
   document.getElementById('editModal').classList.remove('open');
@@ -612,16 +678,17 @@ function makePayment(){
   if(!amount||amount<=0){showToast('أدخل مبلغاً صحيحاً','err');return;}
   const c=clients.find(x=>x.id===activeClientId);
   if(amount>getRemaining(c)){showToast('المبلغ أكبر من المديونية','err');return;}
-  c.transactions.push({id:Date.now().toString(),type:'pay',amount,note:document.getElementById('payNote').value.trim()||'تسديد',date:today()});
+  c.transactions.push({id:uid('tx'),type:'pay',amount,note:document.getElementById('payNote').value.trim()||'تسديد',date:today()});
   save();renderClients();document.getElementById('payAmount').value='';document.getElementById('payNote').value='';
   openClient(activeClientId);showToast('✅ تم تسجيل التسديد');
 }
 function addDebtModalOpen(){document.getElementById('addDebtModal2').classList.add('open');document.getElementById('clientModal').classList.remove('open');}
+function closeAddDebtModal(){document.getElementById('addDebtModal2').classList.remove('open');if(activeClientId)document.getElementById('clientModal').classList.add('open');}
 function confirmAddDebt(){
   const amount=parseFloat(document.getElementById('addDebtAmount').value);
   if(!amount||amount<=0){showToast('أدخل مبلغاً صحيحاً','err');return;}
   const c=clients.find(x=>x.id===activeClientId);
-  c.transactions.push({id:Date.now().toString(),type:'debt',amount,note:document.getElementById('addDebtNote').value.trim()||'مديونية جديدة',date:today()});
+  c.transactions.push({id:uid('tx'),type:'debt',amount,note:document.getElementById('addDebtNote').value.trim()||'مديونية جديدة',date:today()});
   save();renderClients();document.getElementById('addDebtModal2').classList.remove('open');
   document.getElementById('addDebtAmount').value='';document.getElementById('addDebtNote').value='';
   openClient(activeClientId);showToast('✅ تم إضافة المديونية');
@@ -636,10 +703,10 @@ function resetApp(){
   setTimeout(()=>document.getElementById('resetUser').focus(),100);
 }
 function closeResetConfirm(){document.getElementById('resetConfirmModal').classList.remove('open');}
-function confirmResetApp(){
+async function confirmResetApp(){
   const user=document.getElementById('resetUser').value.trim();
   const pass=document.getElementById('resetPass').value;
-  if(!isAdminCredential(user,pass)){document.getElementById('resetError').style.display='block';return;}
+  if(!(await isAdminCredential(user,pass))){document.getElementById('resetError').style.display='block';return;}
   if(!confirm('تأكيد أخير: مسح كل البيانات!'))return;
   clients=[];save();renderClients();closeResetConfirm();showToast('تم المسح');
 }
@@ -684,9 +751,24 @@ async function writeBackupFile(dir,manual=false){
   document.getElementById('lastBackupTime').textContent='✅ آخر نسخة: '+fileName;
   showToast(manual?'💾 تم حفظ نسخة جديدة':'🔄 تم حفظ نسخة احتياطية جديدة','info');
 }
-function startAutoBackup(){
+function isAutoBackupEnabled(){return localStorage.getItem(AUTO_BACKUP_KEY)!=='0';}
+function initBackupUi(){
+  setBackupPath(getBackupPath());
+  toggleAutoBackup(isAutoBackupEnabled(),false);
+}
+function toggleAutoBackup(enabled,persist=true){
+  if(persist)localStorage.setItem(AUTO_BACKUP_KEY,enabled?'1':'0');
   const card=document.getElementById('autoBackupCard');
-  if(card) card.classList.add('active');
+  const label=document.getElementById('autoBackupLabel');
+  const input=document.getElementById('autoBackupToggle');
+  if(card)card.classList.toggle('active',enabled);
+  if(label){label.textContent=enabled?'✅ مُفعّل':'⏸ متوقف';label.style.color=enabled?'var(--grn)':'var(--txt3)';}
+  if(input)input.checked=enabled;
+  if(enabled)startAutoBackup();else stopAutoBackup();
+}
+function stopAutoBackup(){if(countdownInterval){clearInterval(countdownInterval);countdownInterval=null;}}
+function startAutoBackup(){
+  if(!isAutoBackupEnabled()||countdownInterval)return;
   setBackupPath(getBackupPath());
   countdownSec=60;
   updateRing(60);
@@ -695,7 +777,7 @@ function startAutoBackup(){
     updateRing(countdownSec);
     if(countdownSec<=0){
       countdownSec=60;
-      doAutoBackupNow();
+      doAutoBackupNow(false);
     }
   },1000);
 }
@@ -708,22 +790,47 @@ function updateRing(s){
   document.getElementById('ringFg').style.stroke=c;
   document.getElementById('ringText').style.color=c;
 }
-async function doAutoBackupNow(){
+async function doAutoBackupNow(manual=true){
   const path=getBackupPath();
   if(!path){showToast('اختر مكان حفظ النسخة الاحتياطية أولاً','info');return;}
   if(!hasTauriFs()){showToast('النسخ فوق ملف ثابت يعمل داخل تطبيق سطح المكتب فقط','err');return;}
-  try{await writeBackupFile(path,true);}
+  try{await writeBackupFile(path,manual);}
   catch(err){showToast('تعذر حفظ النسخة: '+(err.message||err),'err');}
 }
 function exportJSON(){const blob=new Blob([JSON.stringify({version:1,exportDate:new Date().toISOString(),clients},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='دفتر_المديونيات_'+new Date().toISOString().slice(0,10)+'.json';a.click();document.getElementById('lastJson').textContent='آخر تصدير: '+today();showToast('✅ تم تحميل JSON');}
 function exportExcel(){let csv='\uFEFF';csv+='اسم العميل,رقم الهاتف,العنوان,إجمالي المديونية,إجمالي المسدد,المتبقي,عدد الحركات\n';clients.forEach(c=>{csv+=`"${c.name}","${c.phone||''}","${c.address||''}",${getDebt(c)},${getPaid(c)},${getRemaining(c)},${c.transactions.length}\n`;});csv+='\n\nتفاصيل الحركات\nالعميل,النوع,المبلغ,الملاحظة,التاريخ\n';clients.forEach(c=>{c.transactions.forEach(t=>{csv+=`"${c.name}","${t.type==='debt'?'مديونية':'تسديد'}",${t.amount},"${t.note||''}","${t.date}"\n`;});});const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='دفتر_المديونيات_'+new Date().toISOString().slice(0,10)+'.csv';a.click();document.getElementById('lastExcel').textContent='آخر تصدير: '+today();showToast('✅ تم تحميل Excel');}
 function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const data=JSON.parse(ev.target.result);const imp=data.clients||data;if(!Array.isArray(imp))throw new Error();const nw=imp.filter(ic=>!clients.find(c=>c.id===ic.id));if(!confirm(`استيراد ${imp.length} عميل (${nw.length} جديد). متابعة؟`))return;clients=[...clients,...nw];save();renderClients();showToast(`✅ تم استيراد ${nw.length} عميل`);}catch{showToast('خطأ في قراءة JSON','err');}};r.readAsText(file);e.target.value='';}
-function importExcel(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.split('\n').map(l=>l.trim()).filter(l=>l);if(lines.length<2){showToast('الملف فارغ','err');return;}const header=parseCSV(lines[0]).map(h=>h.toLowerCase().replace(/\s+/g,''));const ni=findCol(header,['اسمالعميل','name','الاسم']),pi=findCol(header,['رقمالهاتف','phone','هاتف']),ai=findCol(header,['العنوان','address']),di=findCol(header,['إجماليالمديونية','debt','مديونية','مبلغ']);if(ni===-1||di===-1){showToast('لم يتم العثور على أعمدة الاسم أو المديونية','err');return;}const imp=[];for(let i=1;i<lines.length;i++){const cols=parseCSV(lines[i]);const name=(cols[ni]||'').trim();if(!name)continue;const dv=parseFloat((cols[di]||'0').replace(/[^0-9.]/g,''))||0;imp.push({id:(Date.now()+i).toString(),name,phone:pi>-1?(cols[pi]||'').trim():'',address:ai>-1?(cols[ai]||'').trim():'',color:colors[imp.length%colors.length],transactions:dv>0?[{id:(Date.now()+i+1e4).toString(),type:'debt',amount:dv,note:'مستورد من Excel',date:today()}]:[]});}if(!imp.length){showToast('لا توجد بيانات صالحة','err');return;}const nw=imp.filter(ic=>!clients.find(c=>c.name===ic.name&&c.phone===ic.phone));if(!confirm(`تم العثور على ${imp.length} عميل (${nw.length} جديد). استيراد؟`))return;clients=[...clients,...nw];save();renderClients();showToast(`✅ تم استيراد ${nw.length} عميل`);}catch(err){showToast('خطأ: '+err.message,'err');}};r.readAsText(file,'UTF-8');e.target.value='';}
+function importExcel(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{
+    const lines=ev.target.result.split('\n').map(l=>l.trim()).filter(l=>l);
+    if(lines.length<2){showToast('الملف فارغ','err');return;}
+    const header=parseCSV(lines[0]).map(h=>h.toLowerCase().replace(/\s+/g,''));
+    const ni=findCol(header,['اسمالعميل','name','الاسم']),pi=findCol(header,['رقمالهاتف','phone','هاتف']),ai=findCol(header,['العنوان','address']),di=findCol(header,['إجماليالمديونية','debt','مديونية','مبلغ']);
+    if(ni===-1||di===-1){showToast('لم يتم العثور على أعمدة الاسم أو المديونية','err');return;}
+    const imp=[];
+    for(let i=1;i<lines.length;i++){
+      const cols=parseCSV(lines[i]);
+      const name=(cols[ni]||'').trim();if(!name)continue;
+      const phone=pi>-1?(cols[pi]||'').trim():'';
+      if(!isValidPhone(phone)){showToast('رقم هاتف غير صحيح في ملف Excel: '+phone,'err');return;}
+      const dv=parseFloat((cols[di]||'0').replace(/[^0-9.]/g,''))||0;
+      imp.push({id:uid('client'),name,phone,address:ai>-1?(cols[ai]||'').trim():'',color:colors[imp.length%colors.length],transactions:dv>0?[{id:uid('tx'),type:'debt',amount:dv,note:'مستورد من Excel',date:today()}]:[]});
+    }
+    if(!imp.length){showToast('لا توجد بيانات صالحة','err');return;}
+    const nw=imp.filter(ic=>!clients.find(c=>c.name===ic.name&&c.phone===ic.phone));
+    if(!confirm(`تم العثور على ${imp.length} عميل (${nw.length} جديد). استيراد؟`))return;
+    clients=[...clients,...nw];save();renderClients();showToast(`✅ تم استيراد ${nw.length} عميل`);
+  }catch(err){showToast('خطأ: '+err.message,'err');}};
+  r.readAsText(file,'UTF-8');e.target.value='';
+}
 function findCol(h,v){for(const x of v){const i=h.indexOf(x);if(i>-1)return i;}for(const x of v){const i=h.findIndex(c=>c.includes(x));if(i>-1)return i;}return -1;}
 function parseCSV(line){const r=[];let cur='',inQ=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"')inQ=!inQ;else if(ch===','&&!inQ){r.push(cur);cur='';}else cur+=ch;}r.push(cur);return r.map(s=>s.replace(/^"|"$/g,'').trim());}
 
 document.getElementById('newDate').value=new Date().toISOString().slice(0,10);
-startAutoBackup();
+initBackupUi();
 </script>
 </body>
 </html>
+
