@@ -173,7 +173,6 @@
 <!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
-    <img class="login-logo" src="assets/app-icon.png" alt="Debet Manager icon" />
     <img class="login-brand-logo" src="assets/brand-logo.png" alt="Debet Manager" />
     <div class="login-title">Debet Manager</div>
     <div class="login-sub">أدخل اسم المستخدم وكلمة المرور للدخول</div>
@@ -191,7 +190,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.7</span></div>
+      <div class="app-version">Version <span>1.0.8</span></div>
     </div>
   </div>
 </div>
@@ -252,18 +251,18 @@
       <div class="auto-backup-card active" id="autoBackupCard">
         <div class="auto-top">
           <div class="backup-icon">🔄</div>
-          <div class="backup-info"><div class="backup-name">النسخ التلقائي المستمر</div><div class="backup-desc">اختر مكان الحفظ مرة واحدة، وبعدها يتم استبدال نفس الملف كل دقيقة</div></div>
+          <div class="backup-info"><div class="backup-name">النسخ التلقائي المستمر</div><div class="backup-desc">اختر مجلد الحفظ، ويتم الاحتفاظ بآخر 20 نسخة فقط بأسماء تحتوي على التاريخ والساعة</div></div>
           <span class="toggle-label" style="color:var(--grn);font-weight:700">✅ مُفعّل</span>
         </div>
         <div class="filename-box">
-          <div style="flex:1"><div style="font-size:11px;color:var(--txt2);margin-bottom:4px">مكان الحفظ:</div><div class="filename-value" id="backupPathLabel">لم يتم اختيار مكان الحفظ</div></div>
+          <div style="flex:1"><div style="font-size:11px;color:var(--txt2);margin-bottom:4px">مجلد الحفظ:</div><div class="filename-value" id="backupPathLabel">لم يتم اختيار مجلد الحفظ</div></div>
           <button class="btn btn-ghost" onclick="chooseBackupLocation()" style="font-size:12px;padding:6px 10px">اختيار</button>
         </div>
         <div class="countdown-section">
           <div class="ring-wrap"><svg width="56" height="56" viewBox="0 0 56 56"><circle class="ring-bg" cx="28" cy="28" r="23"/><circle class="ring-fg" id="ringFg" cx="28" cy="28" r="23"/></svg><div class="ring-text" id="ringText">60</div></div>
           <div class="countdown-info">
             <div class="countdown-title">النسخ التالي خلال <span id="countdown">60</span> ثانية</div>
-            <div class="countdown-sub">يتم مسح محتوى النسخة القديمة وحفظ النسخة الجديدة فوقها</div>
+            <div class="countdown-sub">يتم إنشاء نسخة بتاريخ ووقت الحفظ، وبعد 20 نسخة يتم حذف الأقدم</div>
             <div class="last-backup-time" id="lastBackupTime"></div>
           </div>
           <button class="btn btn-success" onclick="doAutoBackupNow()" style="font-size:12px;padding:8px 14px">احفظ الآن</button>
@@ -305,7 +304,12 @@
     <div class="settings-section">
       <div class="setting-row">
         <div class="setting-title">🔑 بيانات الدخول</div>
-        <div style="font-size:12px;color:var(--txt2);line-height:1.8">اسم المستخدم: <strong style="color:var(--txt)">admin</strong><br>كلمة المرور ثابتة ومطلوبة قبل مسح البيانات.</div>
+        <div class="pass-input-row"><input type="text" id="currentUser" placeholder="اسم المستخدم الحالي" /></div>
+        <div class="pass-input-row"><input type="password" id="currentPass" placeholder="كلمة المرور الحالية" /></div>
+        <div class="pass-input-row"><input type="text" id="newUser" placeholder="اسم المستخدم الجديد" /></div>
+        <div class="pass-input-row"><input type="password" id="newPass" placeholder="كلمة المرور الجديدة" /></div>
+        <button class="btn btn-warning" onclick="changeCredentials()">💾 حفظ بيانات الدخول</button>
+        <div id="credentialMsg" style="font-size:13px;margin-top:8px;display:none"></div>
       </div>
       <div class="setting-row" style="background:rgba(239,68,68,.05);border-color:rgba(239,68,68,.2)">
         <div class="setting-title" style="color:#f87171">⚠️ خيارات خطرة</div>
@@ -318,7 +322,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.7</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.8</span></div>
   </footer>
 </div>
 </div>
@@ -412,13 +416,17 @@
 
 <script>
 // ===== AUTH =====
-const ADMIN_USER='admin';
-const ADMIN_PASS='01065260779aA@326';
+const DEFAULT_ADMIN_USER='admin';
+const DEFAULT_ADMIN_PASS='01065260779aA@326';
+const AUTH_USER_KEY='debet_manager_auth_user';
+const AUTH_PASS_KEY='debet_manager_auth_pass';
 let failCount=parseInt(localStorage.getItem('db_fails')||'0');
 let lockUntil=parseInt(localStorage.getItem('db_lock')||'0');
 let lockTimer=null, passVisible=false;
 
 function hash(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return h.toString(36);}
+function getAdminUser(){return localStorage.getItem(AUTH_USER_KEY)||DEFAULT_ADMIN_USER;}
+function getAdminPass(){return localStorage.getItem(AUTH_PASS_KEY)||DEFAULT_ADMIN_PASS;}
 
 function tryLogin(){
   const now=Date.now(); if(now<lockUntil) return;
@@ -451,7 +459,23 @@ function startLockCountdown(sec){
 }
 function toggleEye(){passVisible=!passVisible;document.getElementById('passInput').type=passVisible?'text':'password';document.getElementById('eyeBtn').textContent=passVisible?'🙈':'👁';}
 function logout(){if(!confirm('هل تريد الخروج؟'))return;document.getElementById('mainApp').style.display='none';document.getElementById('loginScreen').style.display='flex';if(countdownInterval){clearInterval(countdownInterval);countdownInterval=null;}}
-function isAdminCredential(user,pass){return user===ADMIN_USER&&pass===ADMIN_PASS;}
+function isAdminCredential(user,pass){return user===getAdminUser()&&pass===getAdminPass();}
+function changeCredentials(){
+  const currentUser=document.getElementById('currentUser').value.trim();
+  const currentPass=document.getElementById('currentPass').value;
+  const newUser=document.getElementById('newUser').value.trim();
+  const newPass=document.getElementById('newPass').value;
+  const msg=document.getElementById('credentialMsg');
+  msg.style.display='block';
+  if(!isAdminCredential(currentUser,currentPass)){msg.style.color='#f87171';msg.textContent='❌ بيانات الدخول الحالية غير صحيحة';return;}
+  if(!newUser){msg.style.color='#f87171';msg.textContent='❌ اسم المستخدم الجديد مطلوب';return;}
+  if(newPass.length<8){msg.style.color='#f87171';msg.textContent='❌ كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف';return;}
+  localStorage.setItem(AUTH_USER_KEY,newUser);
+  localStorage.setItem(AUTH_PASS_KEY,newPass);
+  ['currentUser','currentPass','newUser','newPass'].forEach(id=>document.getElementById(id).value='');
+  msg.style.color='#34d399';msg.textContent='✅ تم حفظ بيانات الدخول الجديدة';
+  showToast('✅ تم تغيير بيانات الدخول');
+}
 window.addEventListener('load',()=>{
   localStorage.removeItem('db_pass_hash');
   const now=Date.now();if(now<lockUntil){const rem=Math.ceil((lockUntil-now)/1000);startLockCountdown(rem);}
@@ -462,7 +486,8 @@ let clients=JSON.parse(localStorage.getItem('debtbook_clients')||'[]');
 let activeClientId=null;
 let countdownInterval=null,countdownSec=1800,autoBackupCount=0;
 const FIXED='daftar_madyoniat.json',CIRC=2*Math.PI*23;
-const BACKUP_PATH_KEY='debtbook_backup_path';
+const BACKUP_DIR_KEY='debtbook_backup_dir';
+const MAX_BACKUPS=20;
 
 function save(){localStorage.setItem('debtbook_clients',JSON.stringify(clients));updateStats();}
 function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='err'?'#ef4444':type==='info'?'#2563eb':'#10b981';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
@@ -621,28 +646,43 @@ function confirmResetApp(){
 
 // AUTO BACKUP (AUTOMATIC - Always Running)
 function getBackupData(autoBackup=true){return JSON.stringify({version:1,exportDate:new Date().toISOString(),autoBackup,clients},null,2);}
-function getBackupPath(){return localStorage.getItem(BACKUP_PATH_KEY)||'';}
+function getBackupPath(){return localStorage.getItem(BACKUP_DIR_KEY)||'';}
 function setBackupPath(path){
-  if(path)localStorage.setItem(BACKUP_PATH_KEY,path);
+  if(path)localStorage.setItem(BACKUP_DIR_KEY,path);
   const label=document.getElementById('backupPathLabel');
-  if(label) label.textContent=path||'لم يتم اختيار مكان الحفظ';
+  if(label) label.textContent=path||'لم يتم اختيار مجلد الحفظ';
 }
-function hasTauriFs(){return !!(window.__TAURI__?.dialog?.save&&window.__TAURI__?.fs?.writeTextFile);}
+function hasTauriFs(){return !!(window.__TAURI__?.dialog?.open&&window.__TAURI__?.fs?.writeTextFile&&window.__TAURI__?.fs?.readDir&&window.__TAURI__?.fs?.remove);}
+function backupFileName(){
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return `DebetManager_${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}.json`;
+}
+function joinPath(dir,file){return dir.replace(/[\\\/]+$/,'')+'\\'+file;}
 async function chooseBackupLocation(){
-  if(!hasTauriFs()){showToast('اختيار مكان الحفظ يعمل داخل تطبيق سطح المكتب فقط','err');return;}
-  const selected=await window.__TAURI__.dialog.save({
-    defaultPath: getBackupPath()||FIXED,
-    filters: [{name:'JSON Backup',extensions:['json']}]
-  });
+  if(!hasTauriFs()){showToast('اختيار مجلد الحفظ يعمل داخل تطبيق سطح المكتب فقط','err');return;}
+  const selected=await window.__TAURI__.dialog.open({directory:true,multiple:false});
   if(!selected)return;
   setBackupPath(selected);
   await writeBackupFile(selected,true);
 }
-async function writeBackupFile(path,manual=false){
-  await window.__TAURI__.fs.writeTextFile(path,getBackupData(true));
+async function cleanupOldBackups(dir){
+  const entries=await window.__TAURI__.fs.readDir(dir);
+  const backups=entries
+    .filter(e=>e.name&&/^DebetManager_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.json$/.test(e.name))
+    .map(e=>e.name)
+    .sort();
+  while(backups.length>MAX_BACKUPS){
+    const oldest=backups.shift();
+    await window.__TAURI__.fs.remove(joinPath(dir,oldest));
+  }
+}
+async function writeBackupFile(dir,manual=false){
+  const fileName=backupFileName();
+  await window.__TAURI__.fs.writeTextFile(joinPath(dir,fileName),getBackupData(true));
+  await cleanupOldBackups(dir);
   autoBackupCount++;
-  document.getElementById('lastBackupTime').textContent='✅ آخر نسخة: '+new Date().toLocaleTimeString('ar-EG');
-  showToast(manual?'💾 تم حفظ النسخة في المكان المختار':'🔄 تم تحديث النسخة الاحتياطية','info');
+  document.getElementById('lastBackupTime').textContent='✅ آخر نسخة: '+fileName;
+  showToast(manual?'💾 تم حفظ نسخة جديدة':'🔄 تم حفظ نسخة احتياطية جديدة','info');
 }
 function startAutoBackup(){
   const card=document.getElementById('autoBackupCard');
