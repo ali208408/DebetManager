@@ -159,6 +159,9 @@
   .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--grn); color:#fff; padding:10px 20px; border-radius:8px; font-size:13px; font-weight:600; z-index:999; opacity:0; transition:opacity .3s; pointer-events:none; white-space:nowrap; }
   .toast.show { opacity:1; }
   .empty-state { text-align:center; padding:30px; color:var(--txt3); font-size:14px; }
+  .app-footer { margin:18px 0 4px; padding:14px 10px 4px; border-top:1px solid var(--brd); text-align:center; color:var(--txt2); font-size:12px; line-height:1.8; direction:ltr; }
+  .app-footer strong { color:var(--txt); font-weight:600; }
+  .app-version { color:var(--acc3); font-family:Consolas, monospace; font-size:11px; }
 </style>
 </head>
 <body>
@@ -301,6 +304,12 @@
       </div>
     </div>
   </div>
+
+  <footer class="app-footer">
+    <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
+    <div>Technical support : <strong>01000747708</strong></div>
+    <div class="app-version">Version <span id="appVersion">1.0.3</span></div>
+  </footer>
 </div>
 </div>
 
