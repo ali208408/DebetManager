@@ -6,9 +6,18 @@
   "permissions": [
     "core:default",
     "dialog:default",
-    "fs:allow-read-dir",
-    "fs:allow-remove",
-    "fs:allow-write-text-file",
+    {
+      "identifier": "fs:allow-read-dir",
+      "allow": [{ "path": "$HOME/**" }]
+    },
+    {
+      "identifier": "fs:allow-remove",
+      "allow": [{ "path": "$HOME/**" }]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "$HOME/**" }]
+    },
     "updater:default"
   ]
 }

@@ -191,7 +191,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.9</span></div>
+      <div class="app-version">Version <span>1.0.10</span></div>
     </div>
   </div>
 </div>
@@ -325,7 +325,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.9</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.10</span></div>
   </footer>
 </div>
 </div>
@@ -358,7 +358,6 @@
     <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--brd);flex-wrap:wrap">
       <button class="btn btn-edit" onclick="openEditModal()">✏️ تعديل بيانات العميل</button>
       <button class="btn btn-ghost" style="font-size:12px" onclick="addDebtModalOpen()">➕ مديونية جديدة</button>
-      <button class="btn btn-danger" onclick="deleteClient()">🗑 حذف</button>
     </div>
   </div>
 </div>
@@ -693,7 +692,7 @@ function confirmAddDebt(){
   document.getElementById('addDebtAmount').value='';document.getElementById('addDebtNote').value='';
   openClient(activeClientId);showToast('✅ تم إضافة المديونية');
 }
-function deleteClient(){if(!confirm('هل تريد حذف هذا العميل؟'))return;clients=clients.filter(c=>c.id!==activeClientId);save();renderClients();closeModal();showToast('تم الحذف');}
+function deleteClient(){showToast('حذف العملاء غير مسموح','err');}
 function resetApp(){
   if(!confirm('⚠️ هل أنت متأكد؟'))return;
   document.getElementById('resetUser').value='';
@@ -726,11 +725,12 @@ function backupFileName(){
 }
 function joinPath(dir,file){return dir.replace(/[\\\/]+$/,'')+'\\'+file;}
 async function chooseBackupLocation(){
-  if(!hasTauriFs()){showToast('اختيار مجلد الحفظ يعمل داخل تطبيق سطح المكتب فقط','err');return;}
+  if(!hasTauriFs()){showToast('اختيار مجلد الحفظ يعمل داخل تطبيق سطح المكتب فقط','err');return '';}
   const selected=await window.__TAURI__.dialog.open({directory:true,multiple:false});
-  if(!selected)return;
+  if(!selected)return '';
   setBackupPath(selected);
   await writeBackupFile(selected,true);
+  return selected;
 }
 async function cleanupOldBackups(dir){
   const entries=await window.__TAURI__.fs.readDir(dir);
@@ -791,8 +791,9 @@ function updateRing(s){
   document.getElementById('ringText').style.color=c;
 }
 async function doAutoBackupNow(manual=true){
-  const path=getBackupPath();
-  if(!path){showToast('اختر مكان حفظ النسخة الاحتياطية أولاً','info');return;}
+  let path=getBackupPath();
+  if(!path&&manual){path=await chooseBackupLocation();return;}
+  if(!path)return;
   if(!hasTauriFs()){showToast('النسخ فوق ملف ثابت يعمل داخل تطبيق سطح المكتب فقط','err');return;}
   try{await writeBackupFile(path,manual);}
   catch(err){showToast('تعذر حفظ النسخة: '+(err.message||err),'err');}
@@ -833,4 +834,5 @@ initBackupUi();
 </script>
 </body>
 </html>
+
 
