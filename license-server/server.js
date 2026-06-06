@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import express from 'express';
+import pg from 'pg';
 
 const app = express();
 const PORT = Number(process.env.PORT || 8787);
@@ -9,14 +10,57 @@ const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'change-this-password';
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DATA_DIR, 'licenses.json');
+const DATABASE_URL = process.env.DATABASE_URL || '';
 const ADMIN_SESSION = crypto
   .createHash('sha256')
   .update(`${ADMIN_USER}:${ADMIN_PASS}`)
   .digest('hex');
+const pool = DATABASE_URL
+  ? new pg.Pool({
+      connectionString: DATABASE_URL,
+      ssl: DATABASE_URL.includes('railway') || process.env.PGSSL === '1' ? { rejectUnauthorized: false } : false
+    })
+  : null;
 
 app.use(express.json());
 
+async function initDb() {
+  if (!pool) return;
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS licenses (
+      id TEXT PRIMARY KEY,
+      customer_name TEXT NOT NULL,
+      phone TEXT NOT NULL DEFAULT '',
+      license_key TEXT NOT NULL UNIQUE,
+      status TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      device_fingerprint TEXT NOT NULL DEFAULT '',
+      device_name TEXT NOT NULL DEFAULT '',
+      activated_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL
+    )
+  `);
+}
+
 async function readDb() {
+  if (pool) {
+    await initDb();
+    const result = await pool.query('SELECT * FROM licenses ORDER BY created_at DESC');
+    return {
+      licenses: result.rows.map((row) => ({
+        id: row.id,
+        customerName: row.customer_name,
+        phone: row.phone,
+        licenseKey: row.license_key,
+        status: row.status,
+        expiresAt: new Date(row.expires_at).toISOString(),
+        deviceFingerprint: row.device_fingerprint,
+        deviceName: row.device_name,
+        activatedAt: row.activated_at ? new Date(row.activated_at).toISOString() : '',
+        createdAt: new Date(row.created_at).toISOString()
+      }))
+    };
+  }
   await fs.mkdir(DATA_DIR, { recursive: true });
   try {
     return JSON.parse(await fs.readFile(DB_PATH, 'utf8'));
@@ -26,6 +70,50 @@ async function readDb() {
 }
 
 async function writeDb(db) {
+  if (pool) {
+    await initDb();
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const license of db.licenses) {
+        await client.query(
+          `INSERT INTO licenses (
+            id, customer_name, phone, license_key, status, expires_at,
+            device_fingerprint, device_name, activated_at, created_at
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+          ON CONFLICT (id) DO UPDATE SET
+            customer_name = EXCLUDED.customer_name,
+            phone = EXCLUDED.phone,
+            license_key = EXCLUDED.license_key,
+            status = EXCLUDED.status,
+            expires_at = EXCLUDED.expires_at,
+            device_fingerprint = EXCLUDED.device_fingerprint,
+            device_name = EXCLUDED.device_name,
+            activated_at = EXCLUDED.activated_at,
+            created_at = EXCLUDED.created_at`,
+          [
+            license.id,
+            license.customerName,
+            license.phone,
+            license.licenseKey,
+            license.status,
+            license.expiresAt,
+            license.deviceFingerprint || '',
+            license.deviceName || '',
+            license.activatedAt || null,
+            license.createdAt
+          ]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+    return;
+  }
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.writeFile(DB_PATH, JSON.stringify(db, null, 2));
 }
@@ -260,4 +348,5 @@ app.post('/api/admin/licenses/:id/release-device', requireAdmin, async (req, res
 app.listen(PORT, () => {
   console.log(`License server running on http://127.0.0.1:${PORT}`);
   console.log(`Admin panel: http://127.0.0.1:${PORT}/admin`);
+  console.log(pool ? 'Storage: PostgreSQL' : 'Storage: local JSON file');
 });
