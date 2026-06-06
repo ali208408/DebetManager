@@ -12,6 +12,7 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .invoke_handler(tauri::generate_handler![device_fingerprint, device_name])
         .setup(|app| {
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
@@ -56,4 +57,53 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     }
 
     Ok(())
+}
+
+#[tauri::command]
+fn device_name() -> String {
+    std::env::var("COMPUTERNAME")
+        .or_else(|_| std::env::var("HOSTNAME"))
+        .unwrap_or_else(|_| "Unknown device".to_string())
+}
+
+#[tauri::command]
+fn device_fingerprint() -> String {
+    use sha2::{Digest, Sha256};
+
+    let mut parts = Vec::new();
+    parts.push(run_command("wmic", &["csproduct", "get", "uuid"]));
+    parts.push(run_command("wmic", &["baseboard", "get", "serialnumber"]));
+    parts.push(run_command("wmic", &["cpu", "get", "processorid"]));
+    parts.push(device_name());
+
+    let raw = parts
+        .into_iter()
+        .map(|part| {
+            part.lines()
+                .map(str::trim)
+                .filter(|line| {
+                    !line.is_empty()
+                        && !line.eq_ignore_ascii_case("uuid")
+                        && !line.eq_ignore_ascii_case("serialnumber")
+                        && !line.eq_ignore_ascii_case("processorid")
+                })
+                .collect::<Vec<_>>()
+                .join("|")
+        })
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("|");
+
+    let mut hasher = Sha256::new();
+    hasher.update(raw.as_bytes());
+    hex::encode(hasher.finalize())
+}
+
+fn run_command(program: &str, args: &[&str]) -> String {
+    std::process::Command::new(program)
+        .args(args)
+        .output()
+        .ok()
+        .and_then(|output| String::from_utf8(output.stdout).ok())
+        .unwrap_or_default()
 }
