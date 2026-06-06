@@ -23,6 +23,7 @@ const pool = DATABASE_URL
   : null;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 async function initDb() {
   if (!pool) return;
@@ -162,8 +163,7 @@ function requireAdmin(req, res, next) {
   const header = req.headers.authorization || '';
   const [scheme, encoded] = header.split(' ');
   if (scheme !== 'Basic' || !encoded) {
-    res.setHeader('WWW-Authenticate', 'Basic realm="Debet Manager Licenses"');
-    return res.status(401).send('Authentication required');
+    return res.status(401).send(adminLoginPage(''));
   }
   const [user, pass] = Buffer.from(encoded, 'base64').toString('utf8').split(':');
   if (user !== ADMIN_USER || pass !== ADMIN_PASS) return res.status(403).send('Forbidden');
@@ -174,6 +174,44 @@ function requireAdmin(req, res, next) {
   });
   next();
 }
+
+function setAdminSession(res) {
+  res.cookie('debet_admin_session', ADMIN_SESSION, {
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 1000 * 60 * 60 * 8
+  });
+}
+
+function adminLoginPage(error) {
+  return `<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Debet Manager Admin</title>
+<style>
+body{font-family:Segoe UI,Tahoma,sans-serif;background:#0a1628;color:#e2e8f0;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.card{width:360px;background:#0d1f3c;border:1px solid rgba(59,130,246,.35);border-radius:14px;padding:26px}
+h1{font-size:20px;margin:0 0 18px;text-align:center}input{width:100%;box-sizing:border-box;background:#112447;border:1px solid rgba(59,130,246,.3);border-radius:8px;color:#e2e8f0;padding:11px;margin-bottom:10px;outline:none}
+button{width:100%;background:#2563eb;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:700;cursor:pointer}.err{color:#f87171;font-size:13px;text-align:center;margin-bottom:10px;min-height:18px}
+</style>
+</head>
+<body><form class="card" method="post" action="/admin/login">
+<h1>لوحة تراخيص Debet Manager</h1>
+<div class="err">${error}</div>
+<input name="user" placeholder="اسم المستخدم" autocomplete="username">
+<input name="pass" type="password" placeholder="كلمة المرور" autocomplete="current-password">
+<button type="submit">دخول</button>
+</form></body></html>`;
+}
+
+app.post('/admin/login', (req, res) => {
+  if (req.body.user !== ADMIN_USER || req.body.pass !== ADMIN_PASS) {
+    return res.status(403).send(adminLoginPage('بيانات الدخول غير صحيحة'));
+  }
+  setAdminSession(res);
+  res.redirect('/admin');
+});
 
 function checkLicense(license, deviceFingerprint) {
   if (!license) return { status: 'missing' };
