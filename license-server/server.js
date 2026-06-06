@@ -18,7 +18,7 @@ const ADMIN_SESSION = crypto
 const pool = DATABASE_URL
   ? new pg.Pool({
       connectionString: DATABASE_URL,
-      ssl: DATABASE_URL.includes('railway') || process.env.PGSSL === '1' ? { rejectUnauthorized: false } : false
+      ssl: process.env.PGSSL === '1' ? { rejectUnauthorized: false } : false
     })
   : null;
 
