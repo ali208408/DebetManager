@@ -9,6 +9,10 @@ const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'change-this-password';
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DATA_DIR, 'licenses.json');
+const ADMIN_SESSION = crypto
+  .createHash('sha256')
+  .update(`${ADMIN_USER}:${ADMIN_PASS}`)
+  .digest('hex');
 
 app.use(express.json());
 
@@ -59,6 +63,14 @@ function publicLicense(license) {
 }
 
 function requireAdmin(req, res, next) {
+  const cookies = Object.fromEntries(
+    String(req.headers.cookie || '')
+      .split(';')
+      .map((part) => part.trim().split('='))
+      .filter(([key, value]) => key && value)
+  );
+  if (cookies.debet_admin_session === ADMIN_SESSION) return next();
+
   const header = req.headers.authorization || '';
   const [scheme, encoded] = header.split(' ');
   if (scheme !== 'Basic' || !encoded) {
@@ -67,6 +79,11 @@ function requireAdmin(req, res, next) {
   }
   const [user, pass] = Buffer.from(encoded, 'base64').toString('utf8').split(':');
   if (user !== ADMIN_USER || pass !== ADMIN_PASS) return res.status(403).send('Forbidden');
+  res.cookie('debet_admin_session', ADMIN_SESSION, {
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 1000 * 60 * 60 * 8
+  });
   next();
 }
 
@@ -131,6 +148,7 @@ th{background:#112447}.actions{display:flex;gap:6px;flex-wrap:wrap}.muted{color:
 </head>
 <body><div class="wrap">
 <div class="top"><h1>لوحة تراخيص Debet Manager</h1><button onclick="loadLicenses()">تحديث</button></div>
+<div id="message" class="muted" style="margin-bottom:12px"></div>
 <div class="card">
   <div class="grid">
     <input id="customerName" placeholder="اسم العميل">
@@ -142,17 +160,33 @@ th{background:#112447}.actions{display:flex;gap:6px;flex-wrap:wrap}.muted{color:
 <table><thead><tr><th>العميل</th><th>المفتاح</th><th>تاريخ الانتهاء</th><th>الحالة</th><th>الجهاز</th><th>إجراءات</th></tr></thead><tbody id="rows"></tbody></table>
 </div>
 <script>
-async function api(path, options={}){const r=await fetch(path,{headers:{'Content-Type':'application/json'},...options});if(!r.ok)throw new Error(await r.text());return r.json();}
+function setMessage(text,type=''){message.textContent=text;message.style.color=type==='err'?'#f87171':type==='ok'?'#34d399':'#94a3b8';}
+async function api(path, options={}){
+  const r=await fetch(path,{credentials:'same-origin',headers:{'Content-Type':'application/json'},...options});
+  if(!r.ok)throw new Error(await r.text());
+  return r.json();
+}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 async function loadLicenses(){
-  const data=await api('/api/admin/licenses');
-  rows.innerHTML=data.licenses.map(l=>'<tr><td>'+esc(l.customerName)+'<div class="muted">'+esc(l.phone)+'</div></td><td class="key">'+esc(l.licenseKey)+'</td><td>'+esc(l.expiresAt.slice(0,10))+'</td><td class="'+esc(l.status)+'">'+esc(l.status)+'</td><td>'+esc(l.deviceName||'غير مفعل')+'<div class="muted">'+(l.deviceBound?'مربوط بجهاز':'لم يربط بعد')+'</div></td><td><div class="actions"><button class="ok" onclick="renew(\\''+l.id+'\\')">تجديد سنة</button><button class="warn" onclick="releaseDevice(\\''+l.id+'\\')">فك الجهاز</button><button class="danger" onclick="suspend(\\''+l.id+'\\')">إيقاف</button><button onclick="activate(\\''+l.id+'\\')">تفعيل</button></div></td></tr>').join('');
+  try{
+    const data=await api('/api/admin/licenses');
+    rows.innerHTML=data.licenses.map(l=>'<tr><td>'+esc(l.customerName)+'<div class="muted">'+esc(l.phone)+'</div></td><td class="key">'+esc(l.licenseKey)+'</td><td>'+esc(l.expiresAt.slice(0,10))+'</td><td class="'+esc(l.status)+'">'+esc(l.status)+'</td><td>'+esc(l.deviceName||'غير مفعل')+'<div class="muted">'+(l.deviceBound?'مربوط بجهاز':'لم يربط بعد')+'</div></td><td><div class="actions"><button class="ok" onclick="renew(\\''+l.id+'\\')">تجديد سنة</button><button class="warn" onclick="releaseDevice(\\''+l.id+'\\')">فك الجهاز</button><button class="danger" onclick="suspend(\\''+l.id+'\\')">إيقاف</button><button onclick="activate(\\''+l.id+'\\')">تفعيل</button></div></td></tr>').join('');
+    setMessage(data.licenses.length?'تم تحميل التراخيص':'لا توجد تراخيص بعد');
+  }catch(err){setMessage('خطأ في تحميل التراخيص: '+err.message,'err');}
 }
-async function createLicense(){await api('/api/admin/licenses',{method:'POST',body:JSON.stringify({customerName:customerName.value,phone:phone.value,years:Number(years.value)})});customerName.value='';phone.value='';loadLicenses();}
-async function renew(id){await api('/api/admin/licenses/'+id+'/renew',{method:'POST',body:JSON.stringify({years:1})});loadLicenses();}
-async function suspend(id){await api('/api/admin/licenses/'+id+'/suspend',{method:'POST'});loadLicenses();}
-async function activate(id){await api('/api/admin/licenses/'+id+'/activate',{method:'POST'});loadLicenses();}
-async function releaseDevice(id){if(confirm('فك ربط الجهاز يسمح بتفعيل المفتاح على جهاز جديد. متابعة؟')){await api('/api/admin/licenses/'+id+'/release-device',{method:'POST'});loadLicenses();}}
+async function createLicense(){
+  try{
+    if(!customerName.value.trim()){setMessage('اسم العميل مطلوب','err');return;}
+    const created=await api('/api/admin/licenses',{method:'POST',body:JSON.stringify({customerName:customerName.value,phone:phone.value,years:Number(years.value)})});
+    customerName.value='';phone.value='';
+    setMessage('تم إنشاء المفتاح: '+created.licenseKey,'ok');
+    await loadLicenses();
+  }catch(err){setMessage('فشل إنشاء المفتاح: '+err.message,'err');}
+}
+async function renew(id){try{await api('/api/admin/licenses/'+id+'/renew',{method:'POST',body:JSON.stringify({years:1})});await loadLicenses();}catch(err){setMessage('فشل التجديد: '+err.message,'err');}}
+async function suspend(id){try{await api('/api/admin/licenses/'+id+'/suspend',{method:'POST'});await loadLicenses();}catch(err){setMessage('فشل الإيقاف: '+err.message,'err');}}
+async function activate(id){try{await api('/api/admin/licenses/'+id+'/activate',{method:'POST'});await loadLicenses();}catch(err){setMessage('فشل التفعيل: '+err.message,'err');}}
+async function releaseDevice(id){if(confirm('فك ربط الجهاز يسمح بتفعيل المفتاح على جهاز جديد. متابعة؟')){try{await api('/api/admin/licenses/'+id+'/release-device',{method:'POST'});await loadLicenses();}catch(err){setMessage('فشل فك الجهاز: '+err.message,'err');}}}
 loadLicenses();
 </script></body></html>`);
 });
