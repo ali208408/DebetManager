@@ -6,8 +6,8 @@ import pg from 'pg';
 
 const app = express();
 const PORT = Number(process.env.PORT || 8787);
-const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.ADMIN_PASS || 'change-this-password';
+const ADMIN_USER = String(process.env.ADMIN_USER || 'admin').trim();
+const ADMIN_PASS = String(process.env.ADMIN_PASS || '123456').trim();
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DATA_DIR, 'licenses.json');
 const DATABASE_URL = process.env.DATABASE_URL || '';
@@ -206,7 +206,9 @@ button{width:100%;background:#2563eb;color:#fff;border:0;border-radius:8px;paddi
 }
 
 app.post('/admin/login', (req, res) => {
-  if (req.body.user !== ADMIN_USER || req.body.pass !== ADMIN_PASS) {
+  const user = String(req.body.user || '').trim();
+  const pass = String(req.body.pass || '').trim();
+  if (user !== ADMIN_USER || pass !== ADMIN_PASS) {
     return res.status(403).send(adminLoginPage('بيانات الدخول غير صحيحة'));
   }
   setAdminSession(res);
