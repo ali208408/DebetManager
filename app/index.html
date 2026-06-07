@@ -191,7 +191,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.19</span></div>
+      <div class="app-version">Version <span>1.0.20</span></div>
     </div>
   </div>
 </div>
@@ -325,7 +325,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.19</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.20</span></div>
   </footer>
 </div>
 </div>
@@ -419,7 +419,7 @@
 <script>
 // ===== AUTH =====
 const DEFAULT_ADMIN_USER='admin';
-const DEFAULT_ADMIN_PASS='01065260779aA@326';
+const DEFAULT_ADMIN_PASS='';
 const AUTH_USER_KEY='debet_manager_auth_user';
 const AUTH_PASS_HASH_KEY='debet_manager_auth_pass_hash';
 const LEGACY_AUTH_PASS_KEY='debet_manager_auth_pass';
@@ -455,7 +455,7 @@ function toB64(bytes){return btoa(String.fromCharCode(...bytes));}
 function fromB64(text){return Uint8Array.from(atob(text),c=>c.charCodeAt(0));}
 function uid(prefix='id'){return prefix+'_'+crypto.randomUUID();}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function isValidPhone(v){return !v||/^01[0-9]{9}$/.test(v);}
+function isValidPhone(v){return true;}
 
 async function tryLogin(){
   const now=Date.now();
@@ -645,7 +645,6 @@ function addClient(){
   const phone=document.getElementById('newPhone').value.trim();
   const dv=parseFloat(document.getElementById('newDebt').value);
   if(!name){showToast('الاسم مطلوب','err');return;}
-  if(!isValidPhone(phone)){showToast('رقم الهاتف يجب أن يكون 11 رقم ويبدأ بـ 01','err');return;}
   if(isNaN(dv)||dv<0){showToast('المبلغ غير صحيح','err');return;}
   const d=document.getElementById('newDate').value;
   clients.push({id:uid('client'),name,phone,address:document.getElementById('newAddress').value.trim(),color:colors[clients.length%colors.length],
@@ -697,7 +696,6 @@ function saveEdit(){
   const name=document.getElementById('editName').value.trim();
   const phone=document.getElementById('editPhone').value.trim();
   if(!name){showToast('الاسم لا يمكن أن يكون فارغاً','err');return;}
-  if(!isValidPhone(phone)){showToast('رقم الهاتف يجب أن يكون 11 رقم ويبدأ بـ 01','err');return;}
   const c=clients.find(x=>x.id===activeClientId);
   c.name=name;
   c.phone=phone;
@@ -851,7 +849,6 @@ function importExcel(e){
       const cols=parseCSV(lines[i]);
       const name=(cols[ni]||'').trim();if(!name)continue;
       const phone=pi>-1?(cols[pi]||'').trim():'';
-      if(!isValidPhone(phone)){showToast('رقم هاتف غير صحيح في ملف Excel: '+phone,'err');return;}
       const dv=parseFloat((cols[di]||'0').replace(/[^0-9.]/g,''))||0;
       imp.push({id:uid('client'),name,phone,address:ai>-1?(cols[ai]||'').trim():'',color:colors[imp.length%colors.length],transactions:dv>0?[{id:uid('tx'),type:'debt',amount:dv,note:'مستورد من Excel',date:today()}]:[]});
     }
@@ -868,6 +865,7 @@ function parseCSV(line){const r=[];let cur='',inQ=false;for(let i=0;i<line.lengt
 document.getElementById('newDate').value=new Date().toISOString().slice(0,10);
 initBackupUi();
 </script>
+<script src="app.js"></script>
 </body>
 </html>
 

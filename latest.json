@@ -1,15 +1,15 @@
 {
-    "version":  "1.0.19",
-    "notes":  "إزالة سيرفر التفعيل ونظام الترخيص. البرنامج يعمل مباشرة بشاشة تسجيل الدخول كما كان.",
-    "pub_date":  "2026-06-07T11:15:57Z",
+    "version":  "1.0.20",
+    "notes":  "إلغاء شرط أن يكون رقم الموبايل 11 رقم. يقبل البرنامج أي صيغة رقم أو يترك الحقل فارغا.",
+    "pub_date":  "2026-06-07T12:34:32Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRlM5RFRLTTNoMWhDVUUxR3VMbzRldFpySlJSTE1KaHoxMUlvMDY4c09CL21FOUZrNkZHMkRueUlybDR1RG9MQ0hBN0J0cXk1OUk5TjQ0ZGhsdDFwdFFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODMwOTM3CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMTlfeDY0LXNldHVwLmV4ZQpBRFpIOXdITnlvS1BRSUd2bVI4K0FVSGVUbXdyK29FZkJIM0F0cUlBQVdabUV5UnJHa2tvbm54aHZ4cFpmb3NDcUc2dkczbXJlN1lNdTcwMVA5ZUVBUT09Cg==",
-                                             "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.19_x64-setup.exe"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRlQzT1czSVFybWNYR0J0QmJXSnYvRmlSYjZlYXlLMjZLN1NMTGxVdXZuWGdWbkp1bHpYSG4ySVpVeGszVmZ6SjRIYm1FTTZIUEQ5bjNNaitHL1ZNUWc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODM1NjQ3CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMjBfeDY0LXNldHVwLmV4ZQpJTVpVSGlOeTk2bkY1US92TkFTcURiQ3hBbVM2aEpURGN0QjBJTjg4NUdMTEFrUHByaUJzcFc3S0RUd1U3UVRJaWs5TmtlaTYwRGkyM2cySnBtYUdDUT09Cg==",
+                                             "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.20_x64-setup.exe"
                                          },
                       "windows-x86_64-msi":  {
-                                                 "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRlVPVDVLVVZlcmZ0ckhTY21HQmtMUFBYZWRzMGR6Zlk1QVNjbSttNC9SM0NMUytud0RJZHFvbmg0Z21rM2lybi9yRm4wWEFxTmI1NXN3SFptNC83Z0E0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODMwOTM3CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMTlfeDY0X2VuLVVTLm1zaQpKS0FxWnRCOWdMQ0YrZFI3N29PWnhTSDhTS0R6MzVIcTNDVjdoZVkweTc5RmIxN0lkS1liUjBDZ09PUm55L08rK0VUL2ZTb1N1TU9NeHZxcVphUHpBdz09Cg==",
-                                                 "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.19_x64_en-US.msi"
+                                                 "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRmVxVk9zQTVQM2MzZ1BQWU9mbk4wN0NreXBvVTcwNm5YYm80UEhWTHVURkRjNTROWmg0Q1FVYWRhNVZpR1liTU01ZGx4WXFrUE9aTS9VbVdsM0QwQndzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODM1NjQ3CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMjBfeDY0X2VuLVVTLm1zaQpBbDhyWWhyc2lnY25INGdMT1dHQmtxZzRlL2pubE5USFBKV3R1bmVmby80MXBGOEFESEdwRDl3Z3VkN3hIbUR4TmZTTjYvVmJlYzhkT3g4MXN6SmlCZz09Cg==",
+                                                 "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.20_x64_en-US.msi"
                                              }
                   }
 }
