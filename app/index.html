@@ -197,7 +197,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.16</span></div>
+      <div class="app-version">Version <span>1.0.17</span></div>
     </div>
   </div>
 </div>
@@ -222,7 +222,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.16</span></div>
+      <div class="app-version">Version <span>1.0.17</span></div>
     </div>
   </div>
 </div>
@@ -356,7 +356,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.16</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.17</span></div>
   </footer>
 </div>
 </div>
@@ -594,7 +594,7 @@ async function tryLogin(){
   if(!licenseOk){await verifyStoredLicense();return;}
   const now=Date.now(); if(now<lockUntil) return;
   const user=document.getElementById('userInput').value.trim();
-  const pass=document.getElementById('passInput').value;
+  const pass=document.getElementById('passInput').value.trim();
   if(await isAdminCredential(user,pass)){
     sessionPass=pass;
     sessionKey=await deriveCryptoKey(pass);
@@ -629,15 +629,22 @@ function logout(){if(!confirm('هل تريد الخروج؟'))return;document.ge
 async function isAdminCredential(user,pass){return user===getAdminUser()&&(await sha256(pass))===await getAdminPassHash();}
 async function changeCredentials(){
   const currentUser=document.getElementById('currentUser').value.trim();
-  const currentPass=document.getElementById('currentPass').value;
+  const currentPass=document.getElementById('currentPass').value.trim();
   const newUser=document.getElementById('newUser').value.trim();
-  const newPass=document.getElementById('newPass').value;
+  const newPass=document.getElementById('newPass').value.trim();
   const msg=document.getElementById('credentialMsg');
   msg.style.display='block';
   if(!(await isAdminCredential(currentUser,currentPass))){msg.style.color='#f87171';msg.textContent='❌ بيانات الدخول الحالية غير صحيحة';return;}
   if(!newUser){msg.style.color='#f87171';msg.textContent='❌ اسم المستخدم الجديد مطلوب';return;}
   if(newPass.length<8){msg.style.color='#f87171';msg.textContent='❌ كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف';return;}
   try{
+    const oldKey=await deriveCryptoKey(currentPass);
+    const secure=localStorage.getItem(DATA_KEY);
+    if(secure){
+      const payload=JSON.parse(secure);
+      const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(payload.iv)},oldKey,fromB64(payload.data));
+      clients=JSON.parse(new TextDecoder().decode(plain)||'[]');
+    }
     const newKey=await deriveCryptoKey(newPass);
     const iv=crypto.getRandomValues(new Uint8Array(12));
     const encoded=new TextEncoder().encode(JSON.stringify(clients));
@@ -651,7 +658,14 @@ async function changeCredentials(){
   }
   localStorage.setItem(AUTH_USER_KEY,newUser);
   localStorage.setItem(AUTH_PASS_HASH_KEY,await sha256(newPass));
+  if(!(await isAdminCredential(newUser,newPass))){
+    msg.style.color='#f87171';msg.textContent='❌ لم يتم حفظ بيانات الدخول الجديدة بشكل صحيح';
+    return;
+  }
   sessionPass=newPass;
+  failCount=0;lockUntil=0;
+  localStorage.setItem('db_fails','0');
+  localStorage.removeItem('db_lock');
   ['currentUser','currentPass','newUser','newPass'].forEach(id=>document.getElementById(id).value='');
   msg.style.color='#34d399';msg.textContent='✅ تم حفظ بيانات الدخول الجديدة';
   showToast('✅ تم تغيير بيانات الدخول');
