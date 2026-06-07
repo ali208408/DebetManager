@@ -113,6 +113,10 @@
   .inline-row { display:grid; grid-template-columns:1.3fr 1fr 1fr 1.5fr auto; gap:8px; align-items:end; }
   .inline-row.compact { grid-template-columns:1fr 1fr 1.5fr auto; }
   .inline-row input, .inline-row select { background:var(--db2); border:1px solid var(--brd); border-radius:8px; padding:9px 10px; color:var(--txt); font-size:13px; outline:none; direction:rtl; font-family:inherit; min-width:0; }
+  .cash-type-buttons { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .cash-type-btn { background:var(--db2); border:1px solid var(--brd); border-radius:8px; padding:9px 10px; color:var(--txt2); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .cash-type-btn.active.income { background:rgba(16,185,129,.16); border-color:rgba(16,185,129,.55); color:#34d399; }
+  .cash-type-btn.active.expense { background:rgba(239,68,68,.14); border-color:rgba(239,68,68,.55); color:#f87171; }
   .activity-row { border-right:3px solid var(--acc2); }
   .activity-amount.plus { color:#34d399; font-weight:800; }
   .activity-amount.minus { color:#f87171; font-weight:800; }
@@ -216,7 +220,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.22</span></div>
+      <div class="app-version">Version <span>1.0.23</span></div>
     </div>
   </div>
 </div>
@@ -307,10 +311,10 @@
     <div class="inline-form">
       <div class="inline-form-title">تسجيل حركة نقدية</div>
       <div class="inline-row compact">
-        <select id="cashType">
-          <option value="income">وارد</option>
-          <option value="expense">منصرف</option>
-        </select>
+        <div class="cash-type-buttons">
+          <button class="cash-type-btn income active" id="cashTypeIncome" onclick="setCashType('income')" type="button">وارد</button>
+          <button class="cash-type-btn expense" id="cashTypeExpense" onclick="setCashType('expense')" type="button">منصرف</button>
+        </div>
         <input type="number" id="cashAmount" placeholder="المبلغ" min="0" />
         <input type="text" id="cashNote" placeholder="البيان" />
         <button class="btn btn-primary" onclick="addCashMovement()">تسجيل</button>
@@ -407,7 +411,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.22</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.23</span></div>
   </footer>
 </div>
 </div>
@@ -440,6 +444,42 @@
     <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--brd);flex-wrap:wrap">
       <button class="btn btn-edit" onclick="openEditModal()">✏️ تعديل بيانات العميل</button>
       <button class="btn btn-ghost" style="font-size:12px" onclick="addDebtModalOpen()">➕ مديونية جديدة</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUPPLIER DETAIL MODAL -->
+<div class="modal-overlay" id="supplierModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title" id="modalSupplierName"></div><div class="modal-sub" id="modalSupplierSub"></div></div>
+      <button class="close-btn" onclick="closeSupplierModal()">✕</button>
+    </div>
+    <div class="client-detail-info" id="modalSupplierInfo"></div>
+    <div class="detail-stats">
+      <div class="detail-stat"><div class="detail-stat-val" id="modalSupplierDebt" style="color:#f87171"></div><div class="detail-stat-lbl">إجمالي المستحق</div></div>
+      <div class="detail-stat"><div class="detail-stat-val" id="modalSupplierPaid" style="color:#34d399"></div><div class="detail-stat-lbl">إجمالي المدفوع</div></div>
+      <div class="detail-stat"><div class="detail-stat-val" id="modalSupplierRemaining" style="color:#fb923c"></div><div class="detail-stat-lbl">المتبقي</div></div>
+    </div>
+    <div class="pay-form">
+      <div class="pay-form-title">✅ دفع للمورد</div>
+      <div class="pay-row">
+        <input type="number" id="supplierPayAmount" placeholder="المبلغ" style="flex:1" min="0" />
+        <input type="text" id="supplierPayNote" placeholder="ملاحظة" style="flex:1.5;direction:rtl" />
+        <button class="btn btn-success" onclick="makeSupplierPayment()">دفع</button>
+      </div>
+    </div>
+    <div class="pay-form" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2)">
+      <div class="pay-form-title" style="color:#f87171">➕ تزويد مديونية المورد</div>
+      <div class="pay-row">
+        <input type="number" id="supplierDebtAmount" placeholder="المبلغ" style="flex:1" min="0" />
+        <input type="text" id="supplierDebtNote" placeholder="ملاحظة" style="flex:1.5;direction:rtl" />
+        <button class="btn btn-primary" onclick="confirmSupplierDebt()">إضافة</button>
+      </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:600;color:var(--txt2);margin-bottom:8px">سجل حركات المورد</div>
+      <div class="transactions" id="modalSupplierTransactions"></div>
     </div>
   </div>
 </div>
@@ -659,6 +699,8 @@ let suppliers=[];
 let cashMovements=[];
 let activityLog=[];
 let activeClientId=null;
+let activeSupplierId=null;
+let cashMovementType='income';
 let countdownInterval=null,countdownSec=1800,autoBackupCount=0;
 const FIXED='daftar_madyoniat.json',CIRC=2*Math.PI*23;
 const BACKUP_DIR_KEY='debtbook_backup_dir';
@@ -799,16 +841,12 @@ function renderSuppliers(search=''){
   if(!filtered.length){list.innerHTML='<div class="empty-state">لا يوجد موردين</div>';return;}
   list.innerHTML=filtered.map(s=>{
     const rem=getSupplierRemaining(s);
-    return `<div class="data-row">
+    return `<div class="data-row" onclick="openSupplier('${esc(s.id)}')" style="cursor:pointer">
       <div class="data-main">
         <div class="data-title">${esc(s.name)}</div>
         <div class="data-meta">${esc(s.phone||'بدون هاتف')} • ${esc(s.note||'بدون ملاحظات')} • ${(s.transactions||[]).length} حركة</div>
       </div>
       <div class="debt-badge ${rem===0?'debt-zero':''}">${rem>0?fmt(rem):'✅ مسدد'}</div>
-      <div class="data-actions">
-        <button class="btn btn-ghost" onclick="addSupplierDebt('${esc(s.id)}')">مستحق</button>
-        <button class="btn btn-success" onclick="paySupplier('${esc(s.id)}')">دفع</button>
-      </div>
     </div>`;
   }).join('');
 }
@@ -826,29 +864,57 @@ function addSupplier(){
   ['supplierName','supplierPhone','supplierOpening','supplierNote'].forEach(id=>document.getElementById(id).value='');
   showToast('✅ تم إضافة المورد');
 }
-function addSupplierDebt(id){
+function openSupplier(id){
+  activeSupplierId=id;
   const s=suppliers.find(x=>x.id===id);
   if(!s)return;
-  const amount=parseFloat(prompt('قيمة المستحق الجديد للمورد: '+s.name)||'0');
+  s.transactions=s.transactions||[];
+  document.getElementById('modalSupplierName').textContent=s.name;
+  document.getElementById('modalSupplierSub').textContent=s.phone||'';
+  let info='';
+  if(s.phone)info+=`<span>📞 <strong>${esc(s.phone)}</strong></span>`;
+  if(s.note)info+=`<span>📝 <strong>${esc(s.note)}</strong></span>`;
+  const infoEl=document.getElementById('modalSupplierInfo');
+  infoEl.innerHTML=info||'<span style="color:var(--txt3);font-size:12px">لا توجد بيانات إضافية</span>';
+  infoEl.style.display='flex';
+  document.getElementById('modalSupplierDebt').textContent=fmt(getSupplierDebt(s));
+  document.getElementById('modalSupplierPaid').textContent=fmt(getSupplierPaid(s));
+  document.getElementById('modalSupplierRemaining').textContent=fmt(getSupplierRemaining(s));
+  document.getElementById('modalSupplierTransactions').innerHTML=s.transactions.length?
+    [...s.transactions].reverse().map(t=>`<div class="tx-row ${t.type==='debt'?'tx-debt':'tx-pay'}"><div><div style="font-size:13px;color:var(--txt)">${esc(t.note||(t.type==='debt'?'مستحق':'دفع'))}</div><div class="tx-date">${esc(t.date)}</div></div><div class="${t.type==='debt'?'tx-amount-debt':'tx-amount-pay'}">${t.type==='debt'?'-':'+'}${fmt(t.amount)}</div></div>`).join(''):
+    '<div style="text-align:center;padding:20px;color:var(--txt3);font-size:13px">لا توجد حركات</div>';
+  document.getElementById('supplierModal').classList.add('open');
+}
+function closeSupplierModal(){document.getElementById('supplierModal').classList.remove('open');activeSupplierId=null;}
+function confirmSupplierDebt(){
+  const s=suppliers.find(x=>x.id===activeSupplierId);
+  if(!s)return;
+  const amount=parseFloat(document.getElementById('supplierDebtAmount').value);
   if(!amount||amount<=0){showToast('المبلغ غير صحيح','err');return;}
-  const note=prompt('ملاحظة الحركة')||'مستحق جديد';
+  const note=document.getElementById('supplierDebtNote').value.trim()||'مستحق جديد';
   s.transactions=s.transactions||[];
   s.transactions.push({id:uid('tx'),type:'debt',amount,note,date:today()});
   addActivity('supplier','مستحق مورد: '+s.name,-amount,note);
-  save();renderSuppliers();renderActivity();showToast('✅ تم تسجيل المستحق');
+  save();renderSuppliers();renderActivity();
+  document.getElementById('supplierDebtAmount').value='';
+  document.getElementById('supplierDebtNote').value='';
+  openSupplier(activeSupplierId);showToast('✅ تم تسجيل المستحق');
 }
-function paySupplier(id){
-  const s=suppliers.find(x=>x.id===id);
+function makeSupplierPayment(){
+  const s=suppliers.find(x=>x.id===activeSupplierId);
   if(!s)return;
   const remaining=getSupplierRemaining(s);
-  const amount=parseFloat(prompt('قيمة الدفع للمورد: '+s.name)||'0');
+  const amount=parseFloat(document.getElementById('supplierPayAmount').value);
   if(!amount||amount<=0){showToast('المبلغ غير صحيح','err');return;}
   if(amount>remaining){showToast('المبلغ أكبر من المتبقي للمورد','err');return;}
-  const note=prompt('ملاحظة الدفع')||'دفع للمورد';
+  const note=document.getElementById('supplierPayNote').value.trim()||'دفع للمورد';
   s.transactions=s.transactions||[];
   s.transactions.push({id:uid('tx'),type:'pay',amount,note,date:today()});
   addActivity('supplier','دفع مورد: '+s.name,amount,note);
-  save();renderSuppliers();renderActivity();showToast('✅ تم تسجيل الدفع');
+  save();renderSuppliers();renderActivity();
+  document.getElementById('supplierPayAmount').value='';
+  document.getElementById('supplierPayNote').value='';
+  openSupplier(activeSupplierId);showToast('✅ تم تسجيل الدفع');
 }
 function renderCashbox(){
   const list=document.getElementById('cashList');
@@ -863,8 +929,13 @@ function renderCashbox(){
     <div class="${m.type==='income'?'activity-amount plus':'activity-amount minus'}">${m.type==='income'?'+':'-'}${fmt(m.amount)}</div>
   </div>`).join('');
 }
+function setCashType(type){
+  cashMovementType=type==='expense'?'expense':'income';
+  document.getElementById('cashTypeIncome')?.classList.toggle('active',cashMovementType==='income');
+  document.getElementById('cashTypeExpense')?.classList.toggle('active',cashMovementType==='expense');
+}
 function addCashMovement(){
-  const type=document.getElementById('cashType').value;
+  const type=cashMovementType;
   const amount=parseFloat(document.getElementById('cashAmount').value);
   const note=document.getElementById('cashNote').value.trim()||'حركة نقدية';
   if(!amount||amount<=0){showToast('أدخل مبلغاً صحيحاً','err');return;}

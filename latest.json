@@ -1,15 +1,15 @@
 {
-  "version": "1.0.22",
-  "notes": "إضافة تبويب الموردين، صندوق النقدية، وسجل آخر 1000 حركة داخل البرنامج.",
-  "pub_date": "2026-06-07T14:28:26Z",
+  "version": "1.0.23",
+  "notes": "تطوير الموردين ليعملوا مثل العملاء مع شاشة تفاصيل وحركات، واستبدال قائمة صندوق النقدية بزرين للوارد والمنصرف.",
+  "pub_date": "2026-06-07T14:44:25Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRlY2ek1EMEc0ZjVKNE05OW9RMjJkM09rcThJK2N3QzFwVjU4ZjdzUUlnYVVzVmhnSjVGNkJxallISmJxN2VEdVYrbHh6cGFZZitZZXd4SXdLaUczendzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODQyNDg4CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMjJfeDY0LXNldHVwLmV4ZQpOMmxmNlJ4ZWxGY1NuUVRiOWxQY2FGT1hkR2c1S1c0R09SRHhFVnpkc0xwVTZPdUM2dmtQUHdQSlc5ZjNRL3Z6aEhBTit5TklSazd4eG53Uzh5ZFNBQT09Cg==",
-      "url": "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.22_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRmJyLzVDeGlrUDFsQU1ZM29pbmJRYTdlTUpWdXFPV2FUVzU5U0llbjhjMHZaZzZVb0dNaW4wZ3ZVTzIxWVFVeXZqU0p4aW1UL3hZWWNYbmJVbE9Sd0FRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODQzNDQ3CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMjNfeDY0LXNldHVwLmV4ZQpoRVllZ1lLQ09kTkZxMnRLaXRwbE5qRVVnU05tdG13TzBYSWgvSlYrTkU1TTdXK1hzRmNuZTFzZEd6aTd1bkJVZzFGOExtY0lJVklYb0dwMjFDaUNCZz09Cg==",
+      "url": "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.23_x64-setup.exe"
     },
     "windows-x86_64-msi": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRmQ0M2ZtQmZQYkxhMEFhQXF5OUdYc1lsbGplMWtoNk9rOTh5a3JRejljaUY2OURrNThwNmxoOGlpWE90TnllZ2wwU01ZUmFick8wM05ER2I1RG9PTUFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODQyNDg4CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMjJfeDY0X2VuLVVTLm1zaQo0SzcwdE0zaklaRDE3cGgzT2tyMm5rQnJkZTIyUWVCQ2JkU3pDdm1QeVVqcGtyZzgzdm5uaTQ1eVJBbUFsWndYNmtIY29KUDNUaEk0TUt1QzRDQUREdz09Cg==",
-      "url": "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.22_x64_en-US.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRmZ3dTY3endJUTZNcFBTT203Mk01emNDMmFsbDZyajlZRy9ka1dqWk9CV3p3OEhiSC9DT1VDSE5mUXZld3l2djlIU2FnbU5kWkxVZkthcHBpczNEblFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODQzNDQ3CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMjNfeDY0X2VuLVVTLm1zaQpiNjRPajRLTHJLYmlYV1FVSWMwYytZSzJpamxEQXA3d3pmTzhFUTM5Y05nTGphSmZZWlN3NlBaVkpDOWRpSGpoVWJ5ZEVFMDE4YngrSlVPWmg4K2JDQT09Cg==",
+      "url": "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.23_x64_en-US.msi"
     }
   }
 }
