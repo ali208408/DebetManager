@@ -197,7 +197,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.17</span></div>
+      <div class="app-version">Version <span>1.0.18</span></div>
     </div>
   </div>
 </div>
@@ -222,7 +222,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.17</span></div>
+      <div class="app-version">Version <span>1.0.18</span></div>
     </div>
   </div>
 </div>
@@ -356,7 +356,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.17</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.18</span></div>
   </footer>
 </div>
 </div>
@@ -592,14 +592,14 @@ function isValidPhone(v){return !v||/^01[0-9]{9}$/.test(v);}
 
 async function tryLogin(){
   if(!licenseOk){await verifyStoredLicense();return;}
-  const now=Date.now(); if(now<lockUntil) return;
+  const now=Date.now();
   const user=document.getElementById('userInput').value.trim();
   const pass=document.getElementById('passInput').value.trim();
   if(await isAdminCredential(user,pass)){
     sessionPass=pass;
     sessionKey=await deriveCryptoKey(pass);
     await loadClients();
-    failCount=0;localStorage.setItem('db_fails','0');localStorage.removeItem('db_lock');
+    clearLoginLock();
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('mainApp').style.display='block';
     document.getElementById('userInput').value='';
@@ -609,6 +609,11 @@ async function tryLogin(){
     updateStats();renderClients();
     startAutoBackup();
   } else {
+    if(now<lockUntil){
+      document.getElementById('loginError').classList.add('show');
+      document.getElementById('attemptsInfo').textContent='الحساب مجمد مؤقتاً. البيانات الصحيحة تفك التجميد فوراً.';
+      return;
+    }
     failCount++;localStorage.setItem('db_fails',failCount);
     document.getElementById('loginError').classList.add('show');
     if(failCount>=3){const ls=30;lockUntil=Date.now()+ls*1000;localStorage.setItem('db_lock',lockUntil);failCount=0;localStorage.setItem('db_fails','0');startLockCountdown(ls);}
@@ -618,11 +623,20 @@ async function tryLogin(){
 function startLockCountdown(sec){
   document.getElementById('loginError').classList.remove('show');
   document.getElementById('lockedMsg').classList.add('show');
-  document.getElementById('userInput').disabled=true;
-  document.getElementById('passInput').disabled=true;
+  document.getElementById('userInput').disabled=false;
+  document.getElementById('passInput').disabled=false;
   document.getElementById('attemptsInfo').textContent='';
   let s=sec;document.getElementById('lockCountdown').textContent=s;
   lockTimer=setInterval(()=>{s--;document.getElementById('lockCountdown').textContent=s;if(s<=0){clearInterval(lockTimer);document.getElementById('lockedMsg').classList.remove('show');document.getElementById('userInput').disabled=false;document.getElementById('passInput').disabled=false;}},1000);
+}
+function clearLoginLock(){
+  failCount=0;lockUntil=0;
+  localStorage.setItem('db_fails','0');
+  localStorage.removeItem('db_lock');
+  if(lockTimer){clearInterval(lockTimer);lockTimer=null;}
+  document.getElementById('lockedMsg')?.classList.remove('show');
+  document.getElementById('userInput').disabled=false;
+  document.getElementById('passInput').disabled=false;
 }
 function toggleEye(){passVisible=!passVisible;document.getElementById('passInput').type=passVisible?'text':'password';document.getElementById('eyeBtn').textContent=passVisible?'🙈':'👁';}
 function logout(){if(!confirm('هل تريد الخروج؟'))return;document.getElementById('mainApp').style.display='none';document.getElementById('loginScreen').style.display='flex';stopAutoBackup();}
@@ -663,9 +677,7 @@ async function changeCredentials(){
     return;
   }
   sessionPass=newPass;
-  failCount=0;lockUntil=0;
-  localStorage.setItem('db_fails','0');
-  localStorage.removeItem('db_lock');
+  clearLoginLock();
   ['currentUser','currentPass','newUser','newPass'].forEach(id=>document.getElementById(id).value='');
   msg.style.color='#34d399';msg.textContent='✅ تم حفظ بيانات الدخول الجديدة';
   showToast('✅ تم تغيير بيانات الدخول');

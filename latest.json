@@ -1,15 +1,15 @@
 {
-    "version":  "1.0.17",
-    "notes":  "إصلاح تغيير باسورد الدخول بإعادة تشفير البيانات بالباسورد الجديد والتحقق من الحفظ.",
-    "pub_date":  "2026-06-07T10:10:46Z",
+    "version":  "1.0.18",
+    "notes":  "إصلاح القفل بعد تغيير الباسورد: البيانات الصحيحة تفك التجميد وتدخل فوراً.",
+    "pub_date":  "2026-06-07T10:43:50Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRlJFT0tjamNMRlpLK1BFTExzRy9MNmxJekF0TFc1N3ZLeGtJYWV6ajl4bnRZTnQyTVdEUWxPZUV1UWVSTEFCR3M1WVF0bTErVWtHSkRpNjU4YnNjK3c4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODI3MDE1CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMTdfeDY0LXNldHVwLmV4ZQpsanE3bDRpbWdqNEVndG14dGh4QWYwYWlmVWdyRGNMRXVXQStReVVxaE5nZmFTV2Z1SEdvWWxicGtSWXVhUUszWU9JbWl1a0dKN1h5a2Y3ZzlFNk1Bdz09Cg==",
-                                             "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.17_x64-setup.exe"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRlYzbjdCTHFRTkhZb2JSbTNTd281Qm9JRW5rUlliYTh2emk4YURKNy9vczlIMmloY3FmTytmeUNadnJ1RmpUSXBGVTJSRjJ4S0ZNZklpeVNZV2M5TndNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODI5MDA5CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMThfeDY0LXNldHVwLmV4ZQpEb3VEMWpHbE5MT3Q1QVIwNWQ5dklpeWU0MlBHN0YyVzdEaGtlaWQ5YTlyeGpOVE80MVJkMkV1dUlHNXllNDZ0N2p6bkpKM09NZUJCT3Jxd3I2RkNBQT09Cg==",
+                                             "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.18_x64-setup.exe"
                                          },
                       "windows-x86_64-msi":  {
-                                                 "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRllBUlBQNm5sMS9mNWZSbDFXNi9hWlAzWFVJU0Z2bFQ2dkNoOXE4RVNIa09HMEJ6L2RiMXZySytmV1k3cEc5S2tCQi9KWlNOSENhaFY1K0w0cDFVbmdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODI3MDE1CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMTdfeDY0X2VuLVVTLm1zaQozU05LdjRwWGxWRkVVbTVoV3Q5d2IvWmJQMWY2V3FRdTNodU9WTWtLMjBvMnltOHhDUllFT0poK3IweFZTWHJQL2I3VkZvRk5XeTBIUXI5dU1KclREdz09Cg==",
-                                                 "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.17_x64_en-US.msi"
+                                                 "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRllmNXcxSlpKWGZLdlRLZjgzM2JBaUVFbDc1cXBsWVVJNi9VcWVPQU5WZFZkQVBpYTFwMnhyR2tmU1AySHhtODE2ZS9JTDRDS01lMW9PMDRQbGFIblEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODI5MDA5CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMThfeDY0X2VuLVVTLm1zaQpQRm5kQUhIY09DNW5tK29jV2ZCcUs2WHlxeG5hSzRXZmxsL0ZoR2JST2lFMC93akhkMFZFaUJGYkN3Q05TaW1rN3orOCtRWGs2RUlXZDJGTEJzc3RDZz09Cg==",
+                                                 "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.18_x64_en-US.msi"
                                              }
                   }
 }
