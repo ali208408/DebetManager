@@ -220,7 +220,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.24</span></div>
+      <div class="app-version">Version <span>1.0.25</span></div>
     </div>
   </div>
 </div>
@@ -411,7 +411,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.24</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.25</span></div>
   </footer>
 </div>
 </div>
@@ -1145,14 +1145,68 @@ async function doAutoBackupNow(manual=true){
 }
 function exportJSON(){const blob=new Blob([JSON.stringify({version:2,exportDate:new Date().toISOString(),clients,suppliers,cashMovements,activityLog},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='دفتر_المديونيات_'+new Date().toISOString().slice(0,10)+'.json';a.click();document.getElementById('lastJson').textContent='آخر تصدير: '+today();showToast('✅ تم تحميل JSON');}
 function exportExcel(){let csv='\uFEFF';csv+='اسم العميل,رقم الهاتف,العنوان,إجمالي المديونية,إجمالي المسدد,المتبقي,عدد الحركات\n';clients.forEach(c=>{csv+=`"${c.name}","${c.phone||''}","${c.address||''}",${getDebt(c)},${getPaid(c)},${getRemaining(c)},${c.transactions.length}\n`;});csv+='\n\nتفاصيل الحركات\nالعميل,النوع,المبلغ,الملاحظة,التاريخ\n';clients.forEach(c=>{c.transactions.forEach(t=>{csv+=`"${c.name}","${t.type==='debt'?'مديونية':'تسديد'}",${t.amount},"${t.note||''}","${t.date}"\n`;});});const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='دفتر_المديونيات_'+new Date().toISOString().slice(0,10)+'.csv';a.click();document.getElementById('lastExcel').textContent='آخر تصدير: '+today();showToast('✅ تم تحميل Excel');}
+function parseBackupText(text){
+  let cleaned=String(text||'').replace(/^\uFEFF/,'').replace(/\u0000/g,'').trim();
+  const firstObj=cleaned.indexOf('{'),firstArr=cleaned.indexOf('[');
+  let start=-1;
+  if(firstObj>-1&&firstArr>-1)start=Math.min(firstObj,firstArr);else start=Math.max(firstObj,firstArr);
+  if(start>0)cleaned=cleaned.slice(start).trim();
+  try{return JSON.parse(cleaned);}catch(err){throw new Error('الملف ليس JSON صالح أو تم حفظه بشكل غير مكتمل');}
+}
+function getLegacyStoredValue(data,key){
+  if(!data||typeof data!=='object')return null;
+  if(data[key]!=null)return data[key];
+  if(data.localStorage&&data.localStorage[key]!=null)return data.localStorage[key];
+  if(data.storage&&data.storage[key]!=null)return data.storage[key];
+  return null;
+}
+function extractImportedClients(data){
+  let imported=null;
+  if(Array.isArray(data))imported=data;
+  else if(Array.isArray(data?.clients))imported=data.clients;
+  else if(Array.isArray(data?.data?.clients))imported=data.data.clients;
+  else if(Array.isArray(data?.payload?.clients))imported=data.payload.clients;
+  else if(data?.clients&&typeof data.clients==='object')imported=Object.values(data.clients);
+  if(!imported){
+    const legacy=getLegacyStoredValue(data,LEGACY_DATA_KEY);
+    if(typeof legacy==='string')imported=parseBackupText(legacy);
+    else if(Array.isArray(legacy))imported=legacy;
+  }
+  if(!Array.isArray(imported))throw new Error('لم يتم العثور على قائمة العملاء داخل الملف');
+  return imported.map(normalizeImportedClient).filter(Boolean);
+}
+function normalizeImportedClient(c,i){
+  if(!c||typeof c!=='object')return null;
+  const name=String(c.name||c.clientName||c.customerName||c['اسم العميل']||c['الاسم']||'').trim();
+  if(!name)return null;
+  const phone=String(c.phone||c.mobile||c.telephone||c['رقم الهاتف']||c['هاتف']||'').trim();
+  const address=String(c.address||c.location||c['العنوان']||'').trim();
+  const txSource=Array.isArray(c.transactions)?c.transactions:Array.isArray(c.movements)?c.movements:Array.isArray(c.history)?c.history:[];
+  const transactions=txSource.map((t,idx)=>normalizeImportedTransaction(t,idx)).filter(Boolean);
+  if(!transactions.length){
+    const debt=Number(c.debt||c.totalDebt||c.remaining||c.amount||c['إجمالي المديونية']||c['مديونية']||0)||0;
+    const paid=Number(c.paid||c.totalPaid||c['إجمالي المسدد']||0)||0;
+    if(debt>0)transactions.push({id:uid('tx'),type:'debt',amount:debt,note:'مديونية مستوردة',date:today()});
+    if(paid>0)transactions.push({id:uid('tx'),type:'pay',amount:paid,note:'مسدد مستورد',date:today()});
+  }
+  return {id:String(c.id||c.clientId||uid('client')),name,phone,address,color:c.color||colors[i%colors.length],transactions};
+}
+function normalizeImportedTransaction(t,i){
+  if(!t||typeof t!=='object')return null;
+  const rawType=String(t.type||t.kind||t['النوع']||'debt').toLowerCase();
+  const type=(rawType.includes('pay')||rawType.includes('paid')||rawType.includes('تسديد')||rawType.includes('سداد')||rawType.includes('مسدد'))?'pay':'debt';
+  const amount=Number(String(t.amount||t.value||t.total||t['المبلغ']||0).replace(/[^0-9.\-]/g,''))||0;
+  if(amount<=0)return null;
+  return {id:String(t.id||uid('tx')),type,amount,note:String(t.note||t.description||t['الملاحظة']||t['البيان']||(type==='pay'?'تسديد مستورد':'مديونية مستوردة')),date:String(t.date||t.createdAt||t['التاريخ']||today())};
+}
 function importJSON(e){
   const file=e.target.files[0];if(!file)return;
   const r=new FileReader();
   r.onload=async ev=>{
     try{
-      const data=JSON.parse(ev.target.result);
-      const imp=data.clients||data;
-      if(!Array.isArray(imp))throw new Error();
+      const data=parseBackupText(ev.target.result);
+      const imp=extractImportedClients(data);
+      if(!imp.length){showToast('لا توجد بيانات عملاء صالحة داخل الملف','err');return;}
       const nw=imp.filter(ic=>!clients.find(c=>c.id===ic.id));
       const newSuppliers=Array.isArray(data.suppliers)?data.suppliers.filter(s=>!suppliers.find(x=>x.id===s.id)):[];
       const newCash=Array.isArray(data.cashMovements)?data.cashMovements.filter(m=>!cashMovements.find(x=>x.id===m.id)):[];
@@ -1166,11 +1220,11 @@ function importJSON(e){
       await save();
       renderClients();renderSuppliers();renderCashbox();renderActivity();
       showToast(`✅ تم استيراد ${nw.length} عميل وحفظ البيانات`);
-    }catch{
-      showToast('خطأ في قراءة JSON','err');
+    }catch(err){
+      showToast(err.message||'خطأ في قراءة JSON','err');
     }
   };
-  r.readAsText(file);e.target.value='';
+  r.readAsText(file,'UTF-8');e.target.value='';
 }
 function importExcel(e){
   const file=e.target.files[0];if(!file)return;
