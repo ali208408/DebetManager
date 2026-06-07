@@ -672,10 +672,12 @@ dependencies = [
 
 [[package]]
 name = "debtbook"
-version = "1.0.13"
+version = "1.0.14"
 dependencies = [
+ "hex",
  "serde",
  "serde_json",
+ "sha2",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",

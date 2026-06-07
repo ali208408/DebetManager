@@ -1,15 +1,15 @@
 {
-    "version":  "1.0.13",
-    "notes":  "تحديث تجريبي للتأكد من استمرار عمل التحديثات بعد الرجوع إلى نسخة 1.0.12.",
-    "pub_date":  "2026-06-06T09:28:10Z",
+    "version":  "1.0.14",
+    "notes":  "إضافة نظام تحكم محلي في الاشتراكات وربط الأجهزة بالـ Device ID.",
+    "pub_date":  "2026-06-07T09:01:29Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRmJPV2VnYWpUbmh5dmprOXJESjY3L3o0eHdQdnVCQjVob3JlYjdZdENIamtPbGd6MmZ6blU3YlFjWklJb1pobEdDUTBBcU83NGU3d3lVSjdXQWF6SGd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNzM4MDcxCWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMTNfeDY0LXNldHVwLmV4ZQoyWmd4T1BJTktPd2IzelU1TVB0K3JPVU8xK3NMU3prSGowOS9SNWt0UFNUMjZmTlFSVE56Z0Y5cnZQamE1NWtDdTY4UmxxMmREVmUzZGZKUVlIOCtEUT09Cg==",
-                                             "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.13_x64-setup.exe"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRmRkQkhGT3FRKy9GeE5NeHNqaUJPMk5aMjBSaXFmZkZFQmtXTUdQYWw3SjdQOTVTaGlxUWxHTmVFZzRTYVRHbG9TclJLQTQzdDJaN05iQlhzRGhVbkFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODIyODY5CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMTRfeDY0LXNldHVwLmV4ZQp3TEtBVXAxOEpOWWFLT09uZE52THowbWljcnZjdzF1N0ZFMk9TMlJvUE9IVWpjcG81NGJiQjZqUTBBcW1WSnN0N3k3YUJKZUJycDB5R1dHSFRFVGpCZz09Cg==",
+                                             "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.14_x64-setup.exe"
                                          },
                       "windows-x86_64-msi":  {
-                                                 "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRlZBYldIYnVyWUwzTHRISnNBUWtoVUNyZEt0YVpZWGFMWmZmR21OSFJJTjQ1YStXV2p5TmlNZldsRVZZM1JzVEphaTVWMklnNTROR01YNk9RZFJlVkEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNzM4MDcwCWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMTNfeDY0X2VuLVVTLm1zaQpwUkh5ZWdQMDJjWmpYb1J6a2FBcWFzdXNNN2dqOHdtajZxeWhIcGJkN1Q0U2EyTWYwZm94dnpLam5qditxTGdsNzFJcUF1RjBraVA2QmJNWEtVK2xDZz09Cg==",
-                                                 "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.13_x64_en-US.msi"
+                                                 "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRlZibm1KWk52SjZEREZ0MlNhT2w5L21uTjh4Qk1iMFpDR1h5a1Yxa3NEM1dueHBOWW5ySXc4NkEyS0pjay9ERGo2aWliNHE3ZzRmRktqbFpJY1pkS1FFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODIyODY5CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMTRfeDY0X2VuLVVTLm1zaQpwdWdPamV2MHpxS0ZRVndRWUVWQmNIb1FsL0tNV3puQUxqN0Vwd2UxRWJWb1ErdlNWKy9LV0Q5eTdvU2RRQks1UERjUEhmT1hzMG84WThNY3JmK3NBQT09Cg==",
+                                                 "url":  "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.14_x64_en-US.msi"
                                              }
                   }
 }

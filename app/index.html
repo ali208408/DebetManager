@@ -17,7 +17,7 @@
     --card: rgba(13,31,60,0.95); --radius: 12px;
   }
   body { background: var(--db); color: var(--txt); font-family: 'Segoe UI', Tahoma, sans-serif; direction: rtl; min-height: 100vh; }
-  #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(ellipse at 60% 30%, rgba(37,99,235,0.15) 0%, transparent 60%), var(--db); }
+  #licenseScreen, #loginScreen { min-height: 100vh; display: none; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(ellipse at 60% 30%, rgba(37,99,235,0.15) 0%, transparent 60%), var(--db); }
   .login-card { background: var(--db2); border: 1px solid var(--brd2); border-radius: 20px; padding: 40px 36px; width: 100%; max-width: 380px; text-align: center; }
   .login-logo { width: 76px; height: 76px; border-radius: 18px; display: block; object-fit: cover; margin: 0 auto 16px; box-shadow: 0 0 28px rgba(59,130,246,.28); }
   .login-brand-logo { width: 220px; max-width: 100%; display:block; margin: 0 auto 14px; }
@@ -30,6 +30,11 @@
   .login-btn { width: 100%; padding: 13px; background: linear-gradient(135deg, var(--acc), #1d4ed8); border: none; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; }
   .login-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 10px; font-size: 13px; color: #f87171; margin-top: 12px; display: none; }
   .login-error.show { display: block; }
+  .license-status { margin-top:12px; min-height:22px; font-size:13px; color:var(--txt2); line-height:1.6; }
+  .license-status.err { color:#f87171; }
+  .license-status.ok { color:#34d399; }
+  .license-config { margin-top:12px; padding-top:12px; border-top:1px solid var(--brd); }
+  .license-config summary { cursor:pointer; color:var(--txt2); font-size:12px; margin-bottom:10px; }
   .locked-msg { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 10px; padding: 16px; font-size: 13px; color: #f87171; margin-top: 16px; display: none; }
   .locked-msg.show { display: block; }
   .lock-countdown { font-size: 20px; font-weight: 700; margin-top: 6px; }
@@ -171,6 +176,32 @@
 </head>
 <body>
 
+<!-- LICENSE -->
+<div id="licenseScreen">
+  <div class="login-card">
+    <img class="login-brand-logo" src="assets/brand-logo.png" alt="Debet Manager" />
+    <div class="login-title">تفعيل Debet Manager</div>
+    <div class="login-sub">أدخل مفتاح الاشتراك لتفعيل البرنامج على هذا الجهاز</div>
+    <div class="login-field">
+      <input type="text" id="licenseKeyInput" placeholder="License Key" autocomplete="off" dir="ltr" onkeydown="if(event.key==='Enter')activateLicense()" />
+    </div>
+    <button class="login-btn" onclick="activateLicense()">تفعيل البرنامج</button>
+    <div class="license-status" id="licenseStatus"></div>
+    <details class="license-config">
+      <summary>إعدادات السيرفر</summary>
+      <div class="login-field">
+        <input type="text" id="licenseServerInput" placeholder="رابط سيرفر التراخيص" dir="ltr" />
+      </div>
+      <button class="btn btn-ghost" style="width:100%" onclick="saveLicenseServerUrl()">حفظ رابط السيرفر</button>
+    </details>
+    <div class="login-footer">
+      <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
+      <div>Technical support : <strong>01000747708</strong></div>
+      <div class="app-version">Version <span>1.0.14</span></div>
+    </div>
+  </div>
+</div>
+
 <!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
@@ -191,7 +222,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.13</span></div>
+      <div class="app-version">Version <span>1.0.14</span></div>
     </div>
   </div>
 </div>
@@ -325,7 +356,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.13</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.14</span></div>
   </footer>
 </div>
 </div>
@@ -417,6 +448,109 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ===== LICENSE =====
+const DEFAULT_LICENSE_SERVER_URL='http://127.0.0.1:8787';
+const LICENSE_SERVER_URL_KEY='debet_license_server_url';
+const LICENSE_KEY_STORAGE='debet_manager_license_key';
+const LICENSE_LAST_OK_KEY='debet_license_last_ok';
+const LICENSE_GRACE_MS=3*24*60*60*1000;
+let licenseOk=false;
+
+function showScreen(id){
+  ['licenseScreen','loginScreen','mainApp'].forEach(screen=>{
+    const el=document.getElementById(screen);
+    if(!el)return;
+    el.style.display=screen===id?(screen==='mainApp'?'block':'flex'):'none';
+  });
+}
+function getLicenseServerUrl(){return (localStorage.getItem(LICENSE_SERVER_URL_KEY)||DEFAULT_LICENSE_SERVER_URL).replace(/\/+$/,'');}
+function setLicenseStatus(msg,type=''){
+  const el=document.getElementById('licenseStatus');
+  if(!el)return;
+  el.textContent=msg;
+  el.className='license-status '+type;
+}
+function saveLicenseServerUrl(){
+  const value=document.getElementById('licenseServerInput').value.trim().replace(/\/+$/,'');
+  if(!value){setLicenseStatus('أدخل رابط السيرفر','err');return;}
+  localStorage.setItem(LICENSE_SERVER_URL_KEY,value);
+  setLicenseStatus('تم حفظ رابط السيرفر','ok');
+}
+async function invokeTauri(command){
+  if(window.__TAURI__?.core?.invoke)return window.__TAURI__.core.invoke(command);
+  if(window.__TAURI__?.invoke)return window.__TAURI__.invoke(command);
+  return '';
+}
+async function getDeviceInfo(){
+  const fallback=await sha256(navigator.userAgent+'|'+navigator.platform);
+  return {
+    fingerprint:await invokeTauri('device_fingerprint')||fallback,
+    name:await invokeTauri('device_name')||navigator.platform||'Browser'
+  };
+}
+async function callLicenseApi(path,payload){
+  const res=await fetch(getLicenseServerUrl()+path,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data.message||'تعذر الاتصال بسيرفر التراخيص');
+  return data;
+}
+function licenseMessage(status){
+  return {
+    missing:'مفتاح الاشتراك غير موجود',
+    expired:'انتهت صلاحية الاشتراك',
+    suspended:'تم إيقاف هذا الجهاز أو الاشتراك',
+    device_mismatch:'هذا المفتاح مربوط بجهاز آخر'
+  }[status]||'الاشتراك غير صالح';
+}
+function allowLicenseAccess(expiresAt){
+  licenseOk=true;
+  localStorage.setItem(LICENSE_LAST_OK_KEY,String(Date.now()));
+  showScreen('loginScreen');
+  if(expiresAt)setLicenseStatus('الاشتراك مفعل حتى '+expiresAt,'ok');
+}
+async function verifyStoredLicense(){
+  showScreen('licenseScreen');
+  const input=document.getElementById('licenseServerInput');
+  if(input)input.value=getLicenseServerUrl();
+  const key=localStorage.getItem(LICENSE_KEY_STORAGE);
+  if(!key){setLicenseStatus('لم يتم تفعيل البرنامج بعد');return;}
+  setLicenseStatus('جاري التحقق من الاشتراك...');
+  try{
+    const device=await getDeviceInfo();
+    const data=await callLicenseApi('/api/license/check',{licenseKey:key,deviceFingerprint:device.fingerprint,deviceName:device.name});
+    if(data.status==='active'){allowLicenseAccess(data.expiresAt);return;}
+    licenseOk=false;
+    setLicenseStatus(licenseMessage(data.status),'err');
+  }catch(err){
+    const lastOk=Number(localStorage.getItem(LICENSE_LAST_OK_KEY)||0);
+    if(lastOk&&Date.now()-lastOk<LICENSE_GRACE_MS){
+      licenseOk=true;
+      showScreen('loginScreen');
+      return;
+    }
+    licenseOk=false;
+    setLicenseStatus('تعذر التحقق من الاشتراك: '+err.message,'err');
+  }
+}
+async function activateLicense(){
+  const key=document.getElementById('licenseKeyInput').value.trim();
+  if(!key){setLicenseStatus('أدخل مفتاح الاشتراك','err');return;}
+  setLicenseStatus('جاري التفعيل...');
+  try{
+    const device=await getDeviceInfo();
+    const data=await callLicenseApi('/api/license/activate',{licenseKey:key,deviceFingerprint:device.fingerprint,deviceName:device.name});
+    if(data.status!=='active'){setLicenseStatus(licenseMessage(data.status),'err');return;}
+    localStorage.setItem(LICENSE_KEY_STORAGE,key);
+    allowLicenseAccess(data.expiresAt);
+  }catch(err){
+    setLicenseStatus('فشل التفعيل: '+err.message,'err');
+  }
+}
+
 // ===== AUTH =====
 const DEFAULT_ADMIN_USER='admin';
 const DEFAULT_ADMIN_PASS='01065260779aA@326';
@@ -458,6 +592,7 @@ function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function isValidPhone(v){return !v||/^01[0-9]{9}$/.test(v);}
 
 async function tryLogin(){
+  if(!licenseOk){await verifyStoredLicense();return;}
   const now=Date.now(); if(now<lockUntil) return;
   const user=document.getElementById('userInput').value.trim();
   const pass=document.getElementById('passInput').value;
@@ -515,6 +650,7 @@ async function changeCredentials(){
 window.addEventListener('load',()=>{
   localStorage.removeItem('db_pass_hash');
   const now=Date.now();if(now<lockUntil){const rem=Math.ceil((lockUntil-now)/1000);startLockCountdown(rem);}
+  verifyStoredLicense();
 });
 
 // ===== DATA =====
