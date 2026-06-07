@@ -197,7 +197,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.14</span></div>
+      <div class="app-version">Version <span>1.0.15</span></div>
     </div>
   </div>
 </div>
@@ -216,13 +216,15 @@
       <button class="eye-btn" onclick="toggleEye()" id="eyeBtn">👁</button>
     </div>
     <button class="login-btn" onclick="tryLogin()">دخول</button>
+    <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="requestPasswordReset()">نسيت كلمة المرور؟</button>
+    <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="checkPasswordReset()">فحص طلب استعادة كلمة المرور</button>
     <div class="login-error" id="loginError">كلمة المرور غير صحيحة</div>
     <div class="locked-msg" id="lockedMsg">🔒 تم تجميد الدخول<br>يمكنك المحاولة بعد:<div class="lock-countdown" id="lockCountdown">30</div></div>
     <div class="attempts-info" id="attemptsInfo"></div>
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.14</span></div>
+      <div class="app-version">Version <span>1.0.15</span></div>
     </div>
   </div>
 </div>
@@ -356,7 +358,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.14</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.15</span></div>
   </footer>
 </div>
 </div>
@@ -550,6 +552,35 @@ async function activateLicense(){
     setLicenseStatus('فشل التفعيل: '+err.message,'err');
   }
 }
+async function requestPasswordReset(){
+  const key=localStorage.getItem(LICENSE_KEY_STORAGE)||document.getElementById('licenseKeyInput')?.value.trim()||'';
+  if(!key){alert('يجب تفعيل الاشتراك أولا أو إدخال مفتاح الاشتراك في شاشة التفعيل');return;}
+  try{
+    const device=await getDeviceInfo();
+    await callLicenseApi('/api/password-reset/request',{licenseKey:key,deviceFingerprint:device.fingerprint,deviceName:device.name});
+    alert('تم إرسال طلب استعادة كلمة المرور. تواصل مع الدعم لتعيين بيانات دخول جديدة.');
+  }catch(err){
+    alert('فشل إرسال الطلب: '+err.message);
+  }
+}
+async function checkPasswordReset(){
+  const key=localStorage.getItem(LICENSE_KEY_STORAGE)||'';
+  if(!key){alert('لا يوجد مفتاح اشتراك محفوظ على هذا الجهاز');return;}
+  try{
+    const device=await getDeviceInfo();
+    const data=await callLicenseApi('/api/password-reset/check',{licenseKey:key,deviceFingerprint:device.fingerprint});
+    if(!data.ready){alert('لا يوجد طلب استعادة جاهز لهذا الجهاز');return;}
+    if(!confirm('سيتم تعيين بيانات الدخول الجديدة ومسح البيانات المحلية المشفرة على هذا الجهاز لأن كلمة المرور القديمة غير متاحة. متابعة؟'))return;
+    localStorage.setItem(AUTH_USER_KEY,data.username);
+    localStorage.setItem(AUTH_PASS_HASH_KEY,await sha256(data.password));
+    localStorage.removeItem(DATA_KEY);
+    localStorage.removeItem(LEGACY_DATA_KEY);
+    clients=[];
+    alert('تم تعيين بيانات الدخول الجديدة. اسم المستخدم: '+data.username+' كلمة المرور: '+data.password);
+  }catch(err){
+    alert('فشل فحص طلب الاستعادة: '+err.message);
+  }
+}
 
 // ===== AUTH =====
 const DEFAULT_ADMIN_USER='admin';
@@ -638,11 +669,20 @@ async function changeCredentials(){
   if(!(await isAdminCredential(currentUser,currentPass))){msg.style.color='#f87171';msg.textContent='❌ بيانات الدخول الحالية غير صحيحة';return;}
   if(!newUser){msg.style.color='#f87171';msg.textContent='❌ اسم المستخدم الجديد مطلوب';return;}
   if(newPass.length<8){msg.style.color='#f87171';msg.textContent='❌ كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف';return;}
+  const oldKey=sessionKey;
+  if(oldKey){
+    const newKey=await deriveCryptoKey(newPass);
+    const currentClients=JSON.stringify(clients);
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const encoded=new TextEncoder().encode(currentClients);
+    const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},newKey,encoded));
+    localStorage.setItem(DATA_KEY,JSON.stringify({v:1,iv:toB64(iv),data:toB64(cipher)}));
+    localStorage.removeItem(LEGACY_DATA_KEY);
+    sessionKey=newKey;
+  }
   localStorage.setItem(AUTH_USER_KEY,newUser);
   localStorage.setItem(AUTH_PASS_HASH_KEY,await sha256(newPass));
   sessionPass=newPass;
-  sessionKey=await deriveCryptoKey(newPass);
-  await encryptClients();
   ['currentUser','currentPass','newUser','newPass'].forEach(id=>document.getElementById(id).value='');
   msg.style.color='#34d399';msg.textContent='✅ تم حفظ بيانات الدخول الجديدة';
   showToast('✅ تم تغيير بيانات الدخول');

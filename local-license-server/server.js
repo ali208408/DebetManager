@@ -50,6 +50,15 @@ function addYears(date, years) {
   return next;
 }
 
+function addDuration(date, value, unit) {
+  const next = new Date(date);
+  const amount = Math.max(1, Number(value || 1));
+  if (unit === 'hours') next.setHours(next.getHours() + amount);
+  else if (unit === 'days') next.setDate(next.getDate() + amount);
+  else next.setFullYear(next.getFullYear() + amount);
+  return next;
+}
+
 function publicLicense(license) {
   const expired = new Date(license.expiresAt) < new Date();
   return {
@@ -64,6 +73,8 @@ function publicLicense(license) {
     deviceBound: Boolean(license.deviceFingerprint),
     activatedAt: license.activatedAt || '',
     lastSeenAt: license.lastSeenAt || '',
+    resetRequestedAt: license.resetRequestedAt || '',
+    resetReady: Boolean(license.resetPassword),
     createdAt: license.createdAt
   };
 }
@@ -146,6 +157,37 @@ app.post('/api/license/check', async (req, res) => {
   res.json(state);
 });
 
+app.post('/api/password-reset/request', async (req, res) => {
+  const licenseKey = normalizeKey(req.body.licenseKey);
+  const deviceFingerprint = String(req.body.deviceFingerprint || '').trim();
+  const deviceName = String(req.body.deviceName || '').trim();
+  const db = await readDb();
+  const license = db.licenses.find((item) => item.licenseKey === licenseKey);
+  if (!license) return res.status(404).json({ message: 'License not found' });
+  if (license.deviceFingerprint && license.deviceFingerprint !== deviceFingerprint) return res.status(403).json({ message: 'Device mismatch' });
+  license.resetRequestedAt = new Date().toISOString();
+  license.resetDeviceFingerprint = deviceFingerprint;
+  license.resetDeviceName = deviceName;
+  license.resetUsername = '';
+  license.resetPassword = '';
+  await writeDb(db);
+  res.json({ ok: true });
+});
+
+app.post('/api/password-reset/check', async (req, res) => {
+  const licenseKey = normalizeKey(req.body.licenseKey);
+  const deviceFingerprint = String(req.body.deviceFingerprint || '').trim();
+  const db = await readDb();
+  const license = db.licenses.find((item) => item.licenseKey === licenseKey);
+  if (!license || !license.resetPassword || license.resetDeviceFingerprint !== deviceFingerprint) return res.json({ ready: false });
+  const payload = { ready: true, username: license.resetUsername || 'admin', password: license.resetPassword };
+  license.resetUsername = '';
+  license.resetPassword = '';
+  license.resetRequestedAt = '';
+  await writeDb(db);
+  res.json(payload);
+});
+
 app.get('/admin', requireAdmin, (_req, res) => {
   res.type('html').send(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Debet Manager Licenses</title><style>
 body{font-family:Segoe UI,Tahoma,sans-serif;background:#0a1628;color:#e2e8f0;margin:0;padding:24px}.wrap{max-width:1180px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
@@ -161,9 +203,11 @@ th{background:#112447}.actions{display:flex;gap:6px;flex-wrap:wrap}.muted{color:
 function setMessage(text,type=''){message.textContent=text;message.style.color=type==='err'?'#f87171':type==='ok'?'#34d399':'#94a3b8';}
 async function api(path,options={}){const r=await fetch(path,{credentials:'same-origin',headers:{'Content-Type':'application/json'},...options});if(!r.ok)throw new Error(await r.text());return r.json();}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-async function loadLicenses(){try{const data=await api('/api/admin/licenses');rows.innerHTML=data.licenses.map(l=>'<tr><td>'+esc(l.customerName)+'<div class="muted">'+esc(l.phone)+'</div></td><td class="key">'+esc(l.licenseKey)+'</td><td>'+esc(l.expiresAt.slice(0,10))+'</td><td class="'+esc(l.status)+'">'+esc(l.status)+'</td><td>'+esc(l.deviceName||'غير مفعل')+'<div class="device muted">'+esc(l.deviceFingerprint||'لم يربط بعد')+'</div></td><td>'+esc(l.lastSeenAt?new Date(l.lastSeenAt).toLocaleString('ar-EG'):'-')+'</td><td><div class="actions"><button class="ok" onclick="renew(\\''+l.id+'\\')">تجديد سنة</button><button class="warn" onclick="releaseDevice(\\''+l.id+'\\')">فك الجهاز</button><button class="danger" onclick="suspend(\\''+l.id+'\\')">إيقاف</button><button onclick="activate(\\''+l.id+'\\')">تشغيل</button></div></td></tr>').join('');setMessage(data.licenses.length?'تم تحميل التراخيص':'لا توجد تراخيص بعد');}catch(err){setMessage('خطأ: '+err.message,'err');}}
+async function loadLicenses(){try{const data=await api('/api/admin/licenses');rows.innerHTML=data.licenses.map(l=>'<tr><td>'+esc(l.customerName)+'<div class="muted">'+esc(l.phone)+'</div></td><td class="key">'+esc(l.licenseKey)+'</td><td>'+esc(l.expiresAt.slice(0,16).replace('T',' '))+'</td><td class="'+esc(l.status)+'">'+esc(l.status)+(l.resetRequestedAt?'<div class="muted">طلب استعادة كلمة مرور</div>':'')+'</td><td>'+esc(l.deviceName||'غير مفعل')+'<div class="device muted">'+esc(l.deviceFingerprint||'لم يربط بعد')+'</div></td><td>'+esc(l.lastSeenAt?new Date(l.lastSeenAt).toLocaleString('ar-EG'):'-')+'</td><td><div class="actions"><button class="ok" onclick="renew(\\''+l.id+'\\')">تجديد سنة</button><button class="ok" onclick="renewCustom(\\''+l.id+'\\')">تجديد مخصص</button><button class="warn" onclick="resetPassword(\\''+l.id+'\\')">كلمة مرور جديدة</button><button class="warn" onclick="releaseDevice(\\''+l.id+'\\')">فك الجهاز</button><button class="danger" onclick="suspend(\\''+l.id+'\\')">إيقاف</button><button onclick="activate(\\''+l.id+'\\')">تشغيل</button></div></td></tr>').join('');setMessage(data.licenses.length?'تم تحميل التراخيص':'لا توجد تراخيص بعد');}catch(err){setMessage('خطأ: '+err.message,'err');}}
 async function createLicense(){try{if(!customerName.value.trim()){setMessage('اسم العميل مطلوب','err');return;}const created=await api('/api/admin/licenses',{method:'POST',body:JSON.stringify({customerName:customerName.value,phone:phone.value,years:Number(years.value)})});customerName.value='';phone.value='';setMessage('تم إنشاء المفتاح: '+created.licenseKey,'ok');await loadLicenses();}catch(err){setMessage('فشل إنشاء المفتاح: '+err.message,'err');}}
 async function renew(id){try{await api('/api/admin/licenses/'+id+'/renew',{method:'POST',body:JSON.stringify({years:1})});await loadLicenses();}catch(err){setMessage('فشل التجديد: '+err.message,'err');}}
+async function renewCustom(id){try{const value=prompt('اكتب مدة التجديد بالأرقام، مثال 24');if(!value)return;const unit=prompt('اكتب نوع المدة: hours أو days أو years','hours')||'hours';await api('/api/admin/licenses/'+id+'/renew',{method:'POST',body:JSON.stringify({value:Number(value),unit})});await loadLicenses();}catch(err){setMessage('فشل التجديد المخصص: '+err.message,'err');}}
+async function resetPassword(id){try{const username=prompt('اسم المستخدم الجديد','admin');if(!username)return;const password=prompt('كلمة المرور الجديدة');if(!password)return;await api('/api/admin/licenses/'+id+'/password-reset',{method:'POST',body:JSON.stringify({username,password})});setMessage('تم تجهيز كلمة المرور الجديدة للعميل','ok');await loadLicenses();}catch(err){setMessage('فشل تجهيز كلمة المرور: '+err.message,'err');}}
 async function suspend(id){try{await api('/api/admin/licenses/'+id+'/suspend',{method:'POST'});await loadLicenses();}catch(err){setMessage('فشل الإيقاف: '+err.message,'err');}}
 async function activate(id){try{await api('/api/admin/licenses/'+id+'/activate',{method:'POST'});await loadLicenses();}catch(err){setMessage('فشل التشغيل: '+err.message,'err');}}
 async function releaseDevice(id){if(confirm('فك ربط الجهاز يسمح بتفعيل المفتاح على جهاز جديد. متابعة؟')){try{await api('/api/admin/licenses/'+id+'/release-device',{method:'POST'});await loadLicenses();}catch(err){setMessage('فشل فك الجهاز: '+err.message,'err');}}}
@@ -191,6 +235,11 @@ app.post('/api/admin/licenses', requireAdmin, async (req, res) => {
     deviceName: '',
     activatedAt: '',
     lastSeenAt: '',
+    resetRequestedAt: '',
+    resetDeviceFingerprint: '',
+    resetDeviceName: '',
+    resetUsername: '',
+    resetPassword: '',
     createdAt: now.toISOString()
   };
   db.licenses.unshift(license);
@@ -203,8 +252,22 @@ app.post('/api/admin/licenses/:id/renew', requireAdmin, async (req, res) => {
   const license = db.licenses.find((item) => item.id === req.params.id);
   if (!license) return res.status(404).json({ message: 'Not found' });
   const base = new Date(license.expiresAt) > new Date() ? new Date(license.expiresAt) : new Date();
-  license.expiresAt = addYears(base, Math.max(1, Number(req.body.years || 1))).toISOString();
+  license.expiresAt = addDuration(base, req.body.value || req.body.years || 1, req.body.unit || 'years').toISOString();
   license.status = 'active';
+  await writeDb(db);
+  res.json(publicLicense(license));
+});
+
+app.post('/api/admin/licenses/:id/password-reset', requireAdmin, async (req, res) => {
+  const db = await readDb();
+  const license = db.licenses.find((item) => item.id === req.params.id);
+  if (!license) return res.status(404).json({ message: 'Not found' });
+  if (!license.resetRequestedAt) return res.status(400).json({ message: 'No password reset request for this license' });
+  const username = String(req.body.username || '').trim();
+  const password = String(req.body.password || '').trim();
+  if (!username || password.length < 8) return res.status(400).json({ message: 'Username required and password must be at least 8 characters' });
+  license.resetUsername = username;
+  license.resetPassword = password;
   await writeDb(db);
   res.json(publicLicense(license));
 });
