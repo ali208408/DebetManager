@@ -13,6 +13,13 @@ const ADMIN_SESSION = crypto.createHash('sha256').update(`${ADMIN_USER}:${ADMIN_
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
 
 async function readDb() {
   await fs.mkdir(DATA_DIR, { recursive: true });
