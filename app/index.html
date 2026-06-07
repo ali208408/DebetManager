@@ -51,8 +51,8 @@
   .stat-value { font-size:24px; font-weight:700; }
   .stat-card.debt .stat-value { color:#f87171; } .stat-card.clients .stat-value { color:var(--acc3); } .stat-card.paid .stat-value { color:#34d399; }
   .stat-sub { font-size:11px; color:var(--txt3); margin-top:4px; }
-  .tabs { display:flex; gap:4px; margin-bottom:16px; background:var(--db2); border-radius:10px; padding:4px; }
-  .tab { flex:1; padding:8px; text-align:center; border-radius:8px; cursor:pointer; font-size:12px; color:var(--txt2); border:none; background:none; transition:all .2s; }
+  .tabs { display:flex; gap:4px; margin-bottom:16px; background:var(--db2); border-radius:10px; padding:4px; flex-wrap:wrap; }
+  .tab { flex:1 1 120px; padding:8px; text-align:center; border-radius:8px; cursor:pointer; font-size:12px; color:var(--txt2); border:none; background:none; transition:all .2s; }
   .tab.active { background:var(--acc); color:#fff; font-weight:600; }
   .panel { background:var(--card); border:1px solid var(--brd); border-radius:var(--radius); padding:20px; }
   .panel-title { font-size:15px; font-weight:600; margin-bottom:16px; }
@@ -98,6 +98,24 @@
   .client-detail-info span { font-size:12px; color:var(--txt2); }
   .client-detail-info span strong { color:var(--txt); }
   .transactions { display:flex; flex-direction:column; gap:6px; max-height:200px; overflow-y:auto; margin-bottom:16px; }
+  .data-list { display:flex; flex-direction:column; gap:8px; max-height:460px; overflow-y:auto; }
+  .data-row { background:var(--db3); border:1px solid var(--brd); border-radius:10px; padding:12px 14px; display:flex; align-items:center; gap:12px; }
+  .data-main { flex:1; min-width:0; }
+  .data-title { font-size:14px; font-weight:700; color:var(--txt); }
+  .data-meta { font-size:11px; color:var(--txt2); margin-top:3px; line-height:1.6; }
+  .data-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+  .mini-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+  .mini-stat { background:var(--db3); border:1px solid var(--brd); border-radius:10px; padding:12px; text-align:center; }
+  .mini-label { font-size:11px; color:var(--txt2); margin-bottom:5px; }
+  .mini-value { font-size:17px; font-weight:800; color:var(--acc3); }
+  .inline-form { background:var(--db3); border:1px solid var(--brd); border-radius:10px; padding:14px; margin-bottom:14px; }
+  .inline-form-title { font-size:13px; font-weight:700; margin-bottom:10px; color:var(--txt); }
+  .inline-row { display:grid; grid-template-columns:1.3fr 1fr 1fr 1.5fr auto; gap:8px; align-items:end; }
+  .inline-row.compact { grid-template-columns:1fr 1fr 1.5fr auto; }
+  .inline-row input, .inline-row select { background:var(--db2); border:1px solid var(--brd); border-radius:8px; padding:9px 10px; color:var(--txt); font-size:13px; outline:none; direction:rtl; font-family:inherit; min-width:0; }
+  .activity-row { border-right:3px solid var(--acc2); }
+  .activity-amount.plus { color:#34d399; font-weight:800; }
+  .activity-amount.minus { color:#f87171; font-weight:800; }
   .tx-row { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-radius:8px; font-size:13px; }
   .tx-debt { background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.2); }
   .tx-pay { background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.2); }
@@ -167,6 +185,13 @@
   .app-version { color:var(--acc3); font-family:Consolas, monospace; font-size:11px; }
   .login-footer { margin-top:22px; padding-top:16px; border-top:1px solid var(--brd); color:var(--txt2); font-size:12px; line-height:1.8; direction:ltr; }
   .login-footer strong { color:var(--txt); font-weight:600; }
+  @media (max-width:760px){
+    #app { padding:10px; }
+    .mini-grid { grid-template-columns:1fr 1fr; }
+    .inline-row, .inline-row.compact { grid-template-columns:1fr; }
+    .data-row { align-items:flex-start; flex-direction:column; }
+    .data-actions { width:100%; justify-content:flex-start; }
+  }
 </style>
 </head>
 <body>
@@ -191,7 +216,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.21</span></div>
+      <div class="app-version">Version <span>1.0.22</span></div>
     </div>
   </div>
 </div>
@@ -217,6 +242,9 @@
   <div class="tabs">
     <button class="tab active" onclick="switchTab('clients')" id="tab-clients">👥 العملاء</button>
     <button class="tab" onclick="switchTab('add')" id="tab-add">➕ إضافة عميل</button>
+    <button class="tab" onclick="switchTab('suppliers')" id="tab-suppliers">🏭 الموردين</button>
+    <button class="tab" onclick="switchTab('cashbox')" id="tab-cashbox">💵 صندوق النقدية</button>
+    <button class="tab" onclick="switchTab('activity')" id="tab-activity">📜 سجل الحركات</button>
     <button class="tab" onclick="switchTab('backup')" id="tab-backup">💾 النسخ الاحتياطي</button>
     <button class="tab" onclick="switchTab('settings')" id="tab-settings">⚙️ الإعدادات</button>
   </div>
@@ -242,6 +270,60 @@
       <button class="btn btn-primary" onclick="addClient()">✅ إضافة العميل</button>
       <button class="btn btn-ghost" onclick="switchTab('clients')">إلغاء</button>
     </div>
+  </div>
+
+  <!-- SUPPLIERS -->
+  <div class="panel" id="panel-suppliers" style="display:none">
+    <div class="panel-title">🏭 الموردين</div>
+    <div class="mini-grid">
+      <div class="mini-stat"><div class="mini-label">عدد الموردين</div><div class="mini-value" id="totalSuppliers">0</div></div>
+      <div class="mini-stat"><div class="mini-label">إجمالي المستحق للموردين</div><div class="mini-value" id="supplierDebtTotal">0 ج</div></div>
+      <div class="mini-stat"><div class="mini-label">إجمالي المدفوع</div><div class="mini-value" id="supplierPaidTotal">0 ج</div></div>
+      <div class="mini-stat"><div class="mini-label">المتبقي للموردين</div><div class="mini-value" id="supplierRemainingTotal">0 ج</div></div>
+    </div>
+    <div class="inline-form">
+      <div class="inline-form-title">إضافة مورد جديد</div>
+      <div class="inline-row">
+        <input type="text" id="supplierName" placeholder="اسم المورد" />
+        <input type="text" id="supplierPhone" placeholder="رقم الهاتف" />
+        <input type="number" id="supplierOpening" placeholder="رصيد افتتاحي" min="0" />
+        <input type="text" id="supplierNote" placeholder="ملاحظة" />
+        <button class="btn btn-primary" onclick="addSupplier()">إضافة</button>
+      </div>
+    </div>
+    <input class="search-bar" type="text" placeholder="🔍 ابحث في الموردين..." oninput="renderSuppliers(this.value)" />
+    <div class="data-list" id="suppliersList"><div class="empty-state">لا يوجد موردين بعد.</div></div>
+  </div>
+
+  <!-- CASHBOX -->
+  <div class="panel" id="panel-cashbox" style="display:none">
+    <div class="panel-title">💵 صندوق النقدية</div>
+    <div class="mini-grid">
+      <div class="mini-stat"><div class="mini-label">رصيد الصندوق</div><div class="mini-value" id="cashBalance">0 ج</div></div>
+      <div class="mini-stat"><div class="mini-label">إجمالي الوارد</div><div class="mini-value" id="cashIncomeTotal">0 ج</div></div>
+      <div class="mini-stat"><div class="mini-label">إجمالي المنصرف</div><div class="mini-value" id="cashExpenseTotal">0 ج</div></div>
+      <div class="mini-stat"><div class="mini-label">عدد الحركات</div><div class="mini-value" id="cashMovesCount">0</div></div>
+    </div>
+    <div class="inline-form">
+      <div class="inline-form-title">تسجيل حركة نقدية</div>
+      <div class="inline-row compact">
+        <select id="cashType">
+          <option value="income">وارد</option>
+          <option value="expense">منصرف</option>
+        </select>
+        <input type="number" id="cashAmount" placeholder="المبلغ" min="0" />
+        <input type="text" id="cashNote" placeholder="البيان" />
+        <button class="btn btn-primary" onclick="addCashMovement()">تسجيل</button>
+      </div>
+    </div>
+    <div class="data-list" id="cashList"><div class="empty-state">لا توجد حركات نقدية بعد.</div></div>
+  </div>
+
+  <!-- ACTIVITY -->
+  <div class="panel" id="panel-activity" style="display:none">
+    <div class="panel-title">📜 سجل الحركات - آخر 1000 حركة</div>
+    <input class="search-bar" type="text" placeholder="🔍 ابحث في السجل..." oninput="renderActivity(this.value)" />
+    <div class="data-list" id="activityList"><div class="empty-state">لا توجد حركات مسجلة بعد.</div></div>
   </div>
 
   <!-- BACKUP -->
@@ -325,7 +407,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.21</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.22</span></div>
   </footer>
 </div>
 </div>
@@ -425,6 +507,9 @@ const AUTH_PASS_HASH_KEY='debet_manager_auth_pass_hash';
 const LEGACY_AUTH_PASS_KEY='debet_manager_auth_pass';
 const DATA_KEY='debtbook_clients_secure';
 const LEGACY_DATA_KEY='debtbook_clients';
+const SUPPLIERS_KEY='debet_manager_suppliers_secure';
+const CASHBOX_KEY='debet_manager_cashbox_secure';
+const ACTIVITY_KEY='debet_manager_activity_secure';
 const DATA_SALT='DebetManager.local.v1';
 let sessionPass='';
 let sessionKey=null;
@@ -456,6 +541,20 @@ function fromB64(text){return Uint8Array.from(atob(text),c=>c.charCodeAt(0));}
 function uid(prefix='id'){return prefix+'_'+crypto.randomUUID();}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function isValidPhone(v){return true;}
+async function encryptValue(storageKey,value,key=sessionKey){
+  if(!key)return;
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const encoded=new TextEncoder().encode(JSON.stringify(value));
+  const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,encoded));
+  localStorage.setItem(storageKey,JSON.stringify({v:1,iv:toB64(iv),data:toB64(cipher)}));
+}
+async function decryptValue(storageKey,key=sessionKey,fallback=[]){
+  const secure=localStorage.getItem(storageKey);
+  if(!secure||!key)return fallback;
+  const payload=JSON.parse(secure);
+  const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(payload.iv)},key,fromB64(payload.data));
+  return JSON.parse(new TextDecoder().decode(plain)||JSON.stringify(fallback));
+}
 
 async function tryLogin(){
   const now=Date.now();
@@ -464,7 +563,7 @@ async function tryLogin(){
   if(await isAdminCredential(user,pass)){
     sessionPass=pass;
     sessionKey=await deriveCryptoKey(pass);
-    await loadClients();
+    await loadAllData();
     clearLoginLock();
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('mainApp').style.display='block';
@@ -472,7 +571,7 @@ async function tryLogin(){
     document.getElementById('passInput').value='';
     document.getElementById('loginError').classList.remove('show');
     document.getElementById('attemptsInfo').textContent='';
-    updateStats();renderClients();
+    updateStats();renderClients();renderSuppliers();renderCashbox();renderActivity();
     startAutoBackup();
   } else {
     if(now<lockUntil){
@@ -521,15 +620,16 @@ async function changeCredentials(){
     const oldKey=await deriveCryptoKey(currentPass);
     const secure=localStorage.getItem(DATA_KEY);
     if(secure){
-      const payload=JSON.parse(secure);
-      const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(payload.iv)},oldKey,fromB64(payload.data));
-      clients=JSON.parse(new TextDecoder().decode(plain)||'[]');
+      clients=await decryptValue(DATA_KEY,oldKey,[]);
     }
+    suppliers=await decryptValue(SUPPLIERS_KEY,oldKey,suppliers);
+    cashMovements=await decryptValue(CASHBOX_KEY,oldKey,cashMovements);
+    activityLog=await decryptValue(ACTIVITY_KEY,oldKey,activityLog);
     const newKey=await deriveCryptoKey(newPass);
-    const iv=crypto.getRandomValues(new Uint8Array(12));
-    const encoded=new TextEncoder().encode(JSON.stringify(clients));
-    const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},newKey,encoded));
-    localStorage.setItem(DATA_KEY,JSON.stringify({v:1,iv:toB64(iv),data:toB64(cipher)}));
+    await encryptValue(DATA_KEY,clients,newKey);
+    await encryptValue(SUPPLIERS_KEY,suppliers,newKey);
+    await encryptValue(CASHBOX_KEY,cashMovements,newKey);
+    await encryptValue(ACTIVITY_KEY,activityLog,newKey);
     localStorage.removeItem(LEGACY_DATA_KEY);
     sessionKey=newKey;
   }catch(err){
@@ -555,6 +655,9 @@ window.addEventListener('load',()=>{
 
 // ===== DATA =====
 let clients=[];
+let suppliers=[];
+let cashMovements=[];
+let activityLog=[];
 let activeClientId=null;
 let countdownInterval=null,countdownSec=1800,autoBackupCount=0;
 const FIXED='daftar_madyoniat.json',CIRC=2*Math.PI*23;
@@ -563,20 +666,14 @@ const AUTO_BACKUP_KEY='debtbook_auto_backup_enabled';
 const MAX_BACKUPS=20;
 
 async function encryptClients(){
-  if(!sessionKey)return;
-  const iv=crypto.getRandomValues(new Uint8Array(12));
-  const encoded=new TextEncoder().encode(JSON.stringify(clients));
-  const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},sessionKey,encoded));
-  localStorage.setItem(DATA_KEY,JSON.stringify({v:1,iv:toB64(iv),data:toB64(cipher)}));
+  await encryptValue(DATA_KEY,clients);
   localStorage.removeItem(LEGACY_DATA_KEY);
 }
 async function loadClients(){
   const secure=localStorage.getItem(DATA_KEY);
   if(secure&&sessionKey){
     try{
-      const payload=JSON.parse(secure);
-      const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(payload.iv)},sessionKey,fromB64(payload.data));
-      clients=JSON.parse(new TextDecoder().decode(plain)||'[]');
+      clients=await decryptValue(DATA_KEY,sessionKey,[]);
       return;
     }catch{
       clients=[];
@@ -587,14 +684,38 @@ async function loadClients(){
   clients=JSON.parse(localStorage.getItem(LEGACY_DATA_KEY)||'[]');
   await encryptClients();
 }
-function save(){encryptClients();updateStats();}
+async function loadAllData(){
+  await loadClients();
+  try{suppliers=await decryptValue(SUPPLIERS_KEY,sessionKey,[]);}catch{suppliers=[];}
+  try{cashMovements=await decryptValue(CASHBOX_KEY,sessionKey,[]);}catch{cashMovements=[];}
+  try{activityLog=(await decryptValue(ACTIVITY_KEY,sessionKey,[])).slice(0,1000);}catch{activityLog=[];}
+}
+function save(){
+  encryptClients();
+  encryptValue(SUPPLIERS_KEY,suppliers);
+  encryptValue(CASHBOX_KEY,cashMovements);
+  activityLog=activityLog.slice(0,1000);
+  encryptValue(ACTIVITY_KEY,activityLog);
+  updateStats();
+}
 function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='err'?'#ef4444':type==='info'?'#2563eb':'#10b981';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 function fmt(n){return Number(n).toLocaleString('ar-EG',{minimumFractionDigits:0,maximumFractionDigits:2})+' ج';}
 function getDebt(c){return c.transactions.filter(t=>t.type==='debt').reduce((s,t)=>s+t.amount,0);}
 function getPaid(c){return c.transactions.filter(t=>t.type==='pay').reduce((s,t)=>s+t.amount,0);}
 function getRemaining(c){return Math.max(0,getDebt(c)-getPaid(c));}
+function getSupplierDebt(s){return (s.transactions||[]).filter(t=>t.type==='debt').reduce((sum,t)=>sum+t.amount,0);}
+function getSupplierPaid(s){return (s.transactions||[]).filter(t=>t.type==='pay').reduce((sum,t)=>sum+t.amount,0);}
+function getSupplierRemaining(s){return Math.max(0,getSupplierDebt(s)-getSupplierPaid(s));}
+function getCashIncome(){return cashMovements.filter(m=>m.type==='income').reduce((sum,m)=>sum+m.amount,0);}
+function getCashExpense(){return cashMovements.filter(m=>m.type==='expense').reduce((sum,m)=>sum+m.amount,0);}
 function initials(n){return n.trim().split(' ').slice(0,2).map(w=>w[0]).join('');}
 function today(){return new Date().toLocaleDateString('ar-EG');}
+function nowText(){return new Date().toLocaleString('ar-EG');}
+function signedAmount(type,amount){return (type==='pay'||type==='income')?amount:-amount;}
+function addActivity(kind,title,amount=0,meta=''){
+  activityLog.unshift({id:uid('act'),kind,title,amount:Number(amount)||0,meta,date:nowText(),iso:new Date().toISOString()});
+  activityLog=activityLog.slice(0,1000);
+}
 
 function updateStats(){
   let d=0,p=0;
@@ -605,13 +726,27 @@ function updateStats(){
   document.getElementById('debtSub').textContent=clients.filter(c=>getRemaining(c)>0).length+' عملاء لديهم مديونيات';
   document.getElementById('clientsSub').textContent=clients.filter(c=>getRemaining(c)===0).length+' عميل مسدد';
   document.getElementById('payRate').textContent=d>0?Math.round(p/d*100)+'%':'0%';
+  const sd=suppliers.reduce((sum,s)=>sum+getSupplierDebt(s),0), sp=suppliers.reduce((sum,s)=>sum+getSupplierPaid(s),0);
+  if(document.getElementById('totalSuppliers')){
+    document.getElementById('totalSuppliers').textContent=suppliers.length;
+    document.getElementById('supplierDebtTotal').textContent=fmt(sd);
+    document.getElementById('supplierPaidTotal').textContent=fmt(sp);
+    document.getElementById('supplierRemainingTotal').textContent=fmt(Math.max(0,sd-sp));
+    document.getElementById('cashIncomeTotal').textContent=fmt(getCashIncome());
+    document.getElementById('cashExpenseTotal').textContent=fmt(getCashExpense());
+    document.getElementById('cashBalance').textContent=fmt(getCashIncome()-getCashExpense());
+    document.getElementById('cashMovesCount').textContent=cashMovements.length;
+  }
 }
 
 function switchTab(tab){
-  ['clients','add','backup','settings'].forEach(t=>{
+  ['clients','add','suppliers','cashbox','activity','backup','settings'].forEach(t=>{
     document.getElementById('panel-'+t).style.display=t===tab?'block':'none';
     document.getElementById('tab-'+t)?.classList.toggle('active',t===tab);
   });
+  if(tab==='suppliers')renderSuppliers();
+  if(tab==='cashbox')renderCashbox();
+  if(tab==='activity')renderActivity();
 }
 function switchImportTab(tab,el){
   document.getElementById('import-json').style.display=tab==='json'?'block':'none';
@@ -651,7 +786,109 @@ function addClient(){
     transactions:dv>0?[{id:uid('tx'),type:'debt',amount:dv,note:document.getElementById('newNotes').value.trim()||'مديونية ابتدائية',date:d?new Date(d).toLocaleDateString('ar-EG'):today()}]:[]});
   save();renderClients();
   ['newName','newPhone','newDebt','newNotes','newAddress'].forEach(id=>document.getElementById(id).value='');
+  addActivity('client','إضافة عميل: '+name,dv,'عميل');
+  save();
   showToast('✅ تم إضافة العميل');switchTab('clients');
+}
+
+function renderSuppliers(search=''){
+  const list=document.getElementById('suppliersList');
+  if(!list)return;
+  const term=(search||'').trim();
+  const filtered=suppliers.filter(s=>s.name.includes(term)||(s.phone||'').includes(term)||(s.note||'').includes(term));
+  if(!filtered.length){list.innerHTML='<div class="empty-state">لا يوجد موردين</div>';return;}
+  list.innerHTML=filtered.map(s=>{
+    const rem=getSupplierRemaining(s);
+    return `<div class="data-row">
+      <div class="data-main">
+        <div class="data-title">${esc(s.name)}</div>
+        <div class="data-meta">${esc(s.phone||'بدون هاتف')} • ${esc(s.note||'بدون ملاحظات')} • ${(s.transactions||[]).length} حركة</div>
+      </div>
+      <div class="debt-badge ${rem===0?'debt-zero':''}">${rem>0?fmt(rem):'✅ مسدد'}</div>
+      <div class="data-actions">
+        <button class="btn btn-ghost" onclick="addSupplierDebt('${esc(s.id)}')">مستحق</button>
+        <button class="btn btn-success" onclick="paySupplier('${esc(s.id)}')">دفع</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function addSupplier(){
+  const name=document.getElementById('supplierName').value.trim();
+  const phone=document.getElementById('supplierPhone').value.trim();
+  const opening=parseFloat(document.getElementById('supplierOpening').value)||0;
+  const note=document.getElementById('supplierNote').value.trim();
+  if(!name){showToast('اسم المورد مطلوب','err');return;}
+  if(opening<0){showToast('الرصيد غير صحيح','err');return;}
+  const supplier={id:uid('supplier'),name,phone,note,transactions:opening>0?[{id:uid('tx'),type:'debt',amount:opening,note:'رصيد افتتاحي',date:today()}]:[]};
+  suppliers.push(supplier);
+  addActivity('supplier','إضافة مورد: '+name,opening,'مورد');
+  save();renderSuppliers();renderActivity();
+  ['supplierName','supplierPhone','supplierOpening','supplierNote'].forEach(id=>document.getElementById(id).value='');
+  showToast('✅ تم إضافة المورد');
+}
+function addSupplierDebt(id){
+  const s=suppliers.find(x=>x.id===id);
+  if(!s)return;
+  const amount=parseFloat(prompt('قيمة المستحق الجديد للمورد: '+s.name)||'0');
+  if(!amount||amount<=0){showToast('المبلغ غير صحيح','err');return;}
+  const note=prompt('ملاحظة الحركة')||'مستحق جديد';
+  s.transactions=s.transactions||[];
+  s.transactions.push({id:uid('tx'),type:'debt',amount,note,date:today()});
+  addActivity('supplier','مستحق مورد: '+s.name,-amount,note);
+  save();renderSuppliers();renderActivity();showToast('✅ تم تسجيل المستحق');
+}
+function paySupplier(id){
+  const s=suppliers.find(x=>x.id===id);
+  if(!s)return;
+  const remaining=getSupplierRemaining(s);
+  const amount=parseFloat(prompt('قيمة الدفع للمورد: '+s.name)||'0');
+  if(!amount||amount<=0){showToast('المبلغ غير صحيح','err');return;}
+  if(amount>remaining){showToast('المبلغ أكبر من المتبقي للمورد','err');return;}
+  const note=prompt('ملاحظة الدفع')||'دفع للمورد';
+  s.transactions=s.transactions||[];
+  s.transactions.push({id:uid('tx'),type:'pay',amount,note,date:today()});
+  addActivity('supplier','دفع مورد: '+s.name,amount,note);
+  save();renderSuppliers();renderActivity();showToast('✅ تم تسجيل الدفع');
+}
+function renderCashbox(){
+  const list=document.getElementById('cashList');
+  if(!list)return;
+  updateStats();
+  if(!cashMovements.length){list.innerHTML='<div class="empty-state">لا توجد حركات نقدية بعد.</div>';return;}
+  list.innerHTML=cashMovements.slice(0,1000).map(m=>`<div class="data-row">
+    <div class="data-main">
+      <div class="data-title">${m.type==='income'?'وارد':'منصرف'} - ${esc(m.note||'بدون بيان')}</div>
+      <div class="data-meta">${esc(m.date)}</div>
+    </div>
+    <div class="${m.type==='income'?'activity-amount plus':'activity-amount minus'}">${m.type==='income'?'+':'-'}${fmt(m.amount)}</div>
+  </div>`).join('');
+}
+function addCashMovement(){
+  const type=document.getElementById('cashType').value;
+  const amount=parseFloat(document.getElementById('cashAmount').value);
+  const note=document.getElementById('cashNote').value.trim()||'حركة نقدية';
+  if(!amount||amount<=0){showToast('أدخل مبلغاً صحيحاً','err');return;}
+  const signed=type==='income'?amount:-amount;
+  cashMovements.unshift({id:uid('cash'),type,amount,note,date:nowText(),iso:new Date().toISOString()});
+  addActivity('cash',`${type==='income'?'وارد صندوق':'منصرف صندوق'}: ${note}`,signed,'صندوق النقدية');
+  save();renderCashbox();renderActivity();
+  document.getElementById('cashAmount').value='';
+  document.getElementById('cashNote').value='';
+  showToast('✅ تم تسجيل حركة الصندوق');
+}
+function renderActivity(search=''){
+  const list=document.getElementById('activityList');
+  if(!list)return;
+  const term=(search||'').trim();
+  const rows=activityLog.filter(a=>!term||a.title.includes(term)||(a.meta||'').includes(term)||(a.date||'').includes(term)).slice(0,1000);
+  if(!rows.length){list.innerHTML='<div class="empty-state">لا توجد حركات مسجلة</div>';return;}
+  list.innerHTML=rows.map(a=>`<div class="data-row activity-row">
+    <div class="data-main">
+      <div class="data-title">${esc(a.title)}</div>
+      <div class="data-meta">${esc(a.date)}${a.meta?' • '+esc(a.meta):''}</div>
+    </div>
+    <div class="${a.amount>=0?'activity-amount plus':'activity-amount minus'}">${a.amount?fmt(a.amount):''}</div>
+  </div>`).join('');
 }
 
 function openClient(id){
@@ -712,8 +949,9 @@ function makePayment(){
   const c=clients.find(x=>x.id===activeClientId);
   if(amount>getRemaining(c)){showToast('المبلغ أكبر من المديونية','err');return;}
   c.transactions.push({id:uid('tx'),type:'pay',amount,note:document.getElementById('payNote').value.trim()||'تسديد',date:today()});
+  addActivity('client','تسديد عميل: '+c.name,amount,document.getElementById('payNote').value.trim()||'تسديد');
   save();renderClients();document.getElementById('payAmount').value='';document.getElementById('payNote').value='';
-  openClient(activeClientId);showToast('✅ تم تسجيل التسديد');
+  renderActivity();openClient(activeClientId);showToast('✅ تم تسجيل التسديد');
 }
 function addDebtModalOpen(){document.getElementById('addDebtModal2').classList.add('open');document.getElementById('clientModal').classList.remove('open');}
 function closeAddDebtModal(){document.getElementById('addDebtModal2').classList.remove('open');if(activeClientId)document.getElementById('clientModal').classList.add('open');}
@@ -722,9 +960,10 @@ function confirmAddDebt(){
   if(!amount||amount<=0){showToast('أدخل مبلغاً صحيحاً','err');return;}
   const c=clients.find(x=>x.id===activeClientId);
   c.transactions.push({id:uid('tx'),type:'debt',amount,note:document.getElementById('addDebtNote').value.trim()||'مديونية جديدة',date:today()});
+  addActivity('client','مديونية عميل: '+c.name,-amount,document.getElementById('addDebtNote').value.trim()||'مديونية جديدة');
   save();renderClients();document.getElementById('addDebtModal2').classList.remove('open');
   document.getElementById('addDebtAmount').value='';document.getElementById('addDebtNote').value='';
-  openClient(activeClientId);showToast('✅ تم إضافة المديونية');
+  renderActivity();openClient(activeClientId);showToast('✅ تم إضافة المديونية');
 }
 function deleteClient(){showToast('حذف العملاء غير مسموح','err');}
 function resetApp(){
@@ -741,11 +980,11 @@ async function confirmResetApp(){
   const pass=document.getElementById('resetPass').value;
   if(!(await isAdminCredential(user,pass))){document.getElementById('resetError').style.display='block';return;}
   if(!confirm('تأكيد أخير: مسح كل البيانات!'))return;
-  clients=[];save();renderClients();closeResetConfirm();showToast('تم المسح');
+  clients=[];suppliers=[];cashMovements=[];activityLog=[];save();renderClients();renderSuppliers();renderCashbox();renderActivity();closeResetConfirm();showToast('تم المسح');
 }
 
 // AUTO BACKUP (AUTOMATIC - Always Running)
-function getBackupData(autoBackup=true){return JSON.stringify({version:1,exportDate:new Date().toISOString(),autoBackup,clients},null,2);}
+function getBackupData(autoBackup=true){return JSON.stringify({version:2,exportDate:new Date().toISOString(),autoBackup,clients,suppliers,cashMovements,activityLog},null,2);}
 function getBackupPath(){return localStorage.getItem(BACKUP_DIR_KEY)||'';}
 function setBackupPath(path){
   if(path)localStorage.setItem(BACKUP_DIR_KEY,path);
@@ -832,9 +1071,9 @@ async function doAutoBackupNow(manual=true){
   try{await writeBackupFile(path,manual);}
   catch(err){showToast('تعذر حفظ النسخة: '+(err.message||err),'err');}
 }
-function exportJSON(){const blob=new Blob([JSON.stringify({version:1,exportDate:new Date().toISOString(),clients},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='دفتر_المديونيات_'+new Date().toISOString().slice(0,10)+'.json';a.click();document.getElementById('lastJson').textContent='آخر تصدير: '+today();showToast('✅ تم تحميل JSON');}
+function exportJSON(){const blob=new Blob([JSON.stringify({version:2,exportDate:new Date().toISOString(),clients,suppliers,cashMovements,activityLog},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='دفتر_المديونيات_'+new Date().toISOString().slice(0,10)+'.json';a.click();document.getElementById('lastJson').textContent='آخر تصدير: '+today();showToast('✅ تم تحميل JSON');}
 function exportExcel(){let csv='\uFEFF';csv+='اسم العميل,رقم الهاتف,العنوان,إجمالي المديونية,إجمالي المسدد,المتبقي,عدد الحركات\n';clients.forEach(c=>{csv+=`"${c.name}","${c.phone||''}","${c.address||''}",${getDebt(c)},${getPaid(c)},${getRemaining(c)},${c.transactions.length}\n`;});csv+='\n\nتفاصيل الحركات\nالعميل,النوع,المبلغ,الملاحظة,التاريخ\n';clients.forEach(c=>{c.transactions.forEach(t=>{csv+=`"${c.name}","${t.type==='debt'?'مديونية':'تسديد'}",${t.amount},"${t.note||''}","${t.date}"\n`;});});const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='دفتر_المديونيات_'+new Date().toISOString().slice(0,10)+'.csv';a.click();document.getElementById('lastExcel').textContent='آخر تصدير: '+today();showToast('✅ تم تحميل Excel');}
-function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const data=JSON.parse(ev.target.result);const imp=data.clients||data;if(!Array.isArray(imp))throw new Error();const nw=imp.filter(ic=>!clients.find(c=>c.id===ic.id));if(!confirm(`استيراد ${imp.length} عميل (${nw.length} جديد). متابعة؟`))return;clients=[...clients,...nw];save();renderClients();showToast(`✅ تم استيراد ${nw.length} عميل`);}catch{showToast('خطأ في قراءة JSON','err');}};r.readAsText(file);e.target.value='';}
+function importJSON(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const data=JSON.parse(ev.target.result);const imp=data.clients||data;if(!Array.isArray(imp))throw new Error();const nw=imp.filter(ic=>!clients.find(c=>c.id===ic.id));const newSuppliers=Array.isArray(data.suppliers)?data.suppliers.filter(s=>!suppliers.find(x=>x.id===s.id)):[];const newCash=Array.isArray(data.cashMovements)?data.cashMovements.filter(m=>!cashMovements.find(x=>x.id===m.id)):[];const newActivity=Array.isArray(data.activityLog)?data.activityLog.filter(a=>!activityLog.find(x=>x.id===a.id)):[];if(!confirm(`استيراد ${imp.length} عميل (${nw.length} جديد) و ${newSuppliers.length} مورد و ${newCash.length} حركة صندوق. متابعة؟`))return;clients=[...clients,...nw];suppliers=[...suppliers,...newSuppliers];cashMovements=[...newCash,...cashMovements];activityLog=[...newActivity,...activityLog].slice(0,1000);addActivity('import',`استيراد بيانات: ${nw.length} عميل و ${newSuppliers.length} مورد`,0,'JSON');save();renderClients();renderSuppliers();renderCashbox();renderActivity();showToast(`✅ تم استيراد ${nw.length} عميل`);}catch{showToast('خطأ في قراءة JSON','err');}};r.readAsText(file);e.target.value='';}
 function importExcel(e){
   const file=e.target.files[0];if(!file)return;
   const r=new FileReader();
