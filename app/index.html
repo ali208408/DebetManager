@@ -220,7 +220,7 @@
     <div class="login-footer">
       <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
       <div>Technical support : <strong>01000747708</strong></div>
-      <div class="app-version">Version <span>1.0.25</span></div>
+      <div class="app-version">Version <span>1.0.26</span></div>
     </div>
   </div>
 </div>
@@ -411,7 +411,7 @@
   <footer class="app-footer">
     <div>Powered &amp; customized By <strong>Ali Elsherbiny</strong></div>
     <div>Technical support : <strong>01000747708</strong></div>
-    <div class="app-version">Version <span id="appVersion">1.0.25</span></div>
+    <div class="app-version">Version <span id="appVersion">1.0.26</span></div>
   </footer>
 </div>
 </div>
@@ -576,8 +576,20 @@ async function deriveCryptoKey(pass){
   const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
   return crypto.subtle.deriveKey({name:'PBKDF2',salt:new TextEncoder().encode(DATA_SALT),iterations:120000,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
 }
-function toB64(bytes){return btoa(String.fromCharCode(...bytes));}
-function fromB64(text){return Uint8Array.from(atob(text),c=>c.charCodeAt(0));}
+function toB64(bytes){
+  let binary='';
+  const chunkSize=0x8000;
+  for(let i=0;i<bytes.length;i+=chunkSize){
+    binary+=String.fromCharCode.apply(null,bytes.subarray(i,i+chunkSize));
+  }
+  return btoa(binary);
+}
+function fromB64(text){
+  const binary=atob(text);
+  const bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  return bytes;
+}
 function uid(prefix='id'){return prefix+'_'+crypto.randomUUID();}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function isValidPhone(v){return true;}
@@ -735,12 +747,18 @@ async function loadAllData(){
 async function save(){
   activityLog=activityLog.slice(0,1000);
   updateStats();
-  await Promise.all([
-    encryptClients(),
-    encryptValue(SUPPLIERS_KEY,suppliers),
-    encryptValue(CASHBOX_KEY,cashMovements),
-    encryptValue(ACTIVITY_KEY,activityLog)
-  ]);
+  try{
+    await Promise.all([
+      encryptClients(),
+      encryptValue(SUPPLIERS_KEY,suppliers),
+      encryptValue(CASHBOX_KEY,cashMovements),
+      encryptValue(ACTIVITY_KEY,activityLog)
+    ]);
+  }catch(err){
+    console.error('Save failed',err);
+    showToast('فشل حفظ البيانات: '+(err.message||err),'err');
+    throw err;
+  }
 }
 function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='err'?'#ef4444':type==='info'?'#2563eb':'#10b981';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 function fmt(n){return Number(n).toLocaleString('ar-EG',{minimumFractionDigits:0,maximumFractionDigits:2})+' ج';}

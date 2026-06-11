@@ -1,6 +1,6 @@
 [package]
 name = "debtbook"
-version = "1.0.25"
+version = "1.0.26"
 description = "Debet Manager desktop app"
 authors = ["Debet Final"]
 edition = "2021"

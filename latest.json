@@ -1,15 +1,15 @@
 {
-  "version": "1.0.25",
-  "notes": "تحسين استيراد JSON لدعم صيغ النسخ القديمة واستخراج العملاء حتى لو كان الملف بصيغة قديمة أو يحتوي على محارف قبل JSON.",
-  "pub_date": "2026-06-07T18:50:29Z",
+  "version": "1.0.26",
+  "notes": "إصلاح حرج للحفظ والاستيراد مع البيانات الكبيرة: تم تغيير تحويل Base64 ليعمل على دفعات بدلاً من استهلاك call stack، مع إظهار خطأ واضح إذا فشل الحفظ.",
+  "pub_date": "2026-06-11T09:04:27Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRlFFQWVRUDRVOE1xU0c2Z08yZzBkMk15Q2svQ0U5aENQRTIxakZGTjVsSUdrWUFqeWtabWYwMG9VMnNpWDlBZ0Z6U044MXZMZ2x6S2JMQkRSVFBYYUE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODU4MjE0CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMjVfeDY0LXNldHVwLmV4ZQpjUGJrQUpKazFRdVpCOG9EcDMybmxyVXJrYVFLZWl6U0tWNm5QYlpqeUxCQUJZdC9SQzg0eXVNSEVMZ0hDdTNlUTJUemNwUjVuT0xkdHdnM2l3QWtEQT09Cg==",
-      "url": "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.25_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRmJ4RVJWS3V2RTRoUHpZWE9tbEI0dFRlMkRoZEJUWWt2R3NqSlhBaFRnUlJlb1RYZmNXN1pHUHpmK2VUQ3RqbkRXZUNBRUUxV0VrN0pDVE1tbDNXVHdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgxMTY4NjQ4CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMjZfeDY0LXNldHVwLmV4ZQpkb01hNlZqODNtRkh4dUVmcWxFUmFHWEhGT0swZGtYYTN2NmdZdVJUUVh1Y203QzBjblpQckZGVzkweXRKbXFXTS9zWGhTeGVTUFJqMktUUEhPSGJDQT09Cg==",
+      "url": "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.26_x64-setup.exe"
     },
     "windows-x86_64-msi": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRmFRKy9CeThWZ3k5WG9kL3NXVEtld2ZpYUtzbTVPR3Z6cHQ1Z1cvbk4vSGh1Yy9VUXdaQ1dBdXFYZXlKVU9rNkxVclRlbU9xWWlOY0FtOGdlbTZJSWdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwODU4MjE0CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMjVfeDY0X2VuLVVTLm1zaQpMTjFhMFRnNVZ4TWI0ZVgwWlA2cmJIRm1mS2RmTFVqSUZQYXZuWk9VNFN1UUVJZ3RSQ0dpVFpJWGhuYk9OSkZYbGlVdVB1VktNMzNWS2ljUUV6VG5DUT09Cg==",
-      "url": "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.25_x64_en-US.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUZFJVVk0wTWJLRlJUQzA5YUlraFFKOWI1RUFmRHN1WHRWaFNOc1pRSzM0bElMcXlJTWZTdTlleTZHN1dPQmV1NjhiQzFoUitBWklRdWFPU3NxV3ZvaWw1WU50aUcrUVFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgxMTY4NjQ4CWZpbGU6RGViZXQgTWFuYWdlcl8xLjAuMjZfeDY0X2VuLVVTLm1zaQpxVHVCZ2FnMEdyN1g4Z2hjTVNQaEsxNFA5TTYvbU92SWFudFNvYmYzZ1kzNkpjM2hldnBsVXZESjJHSGVxaXpNWnpIM1hxaU1jMWR0TWFvRHNMSmhDQT09Cg==",
+      "url": "https://github.com/ali208408/DebetManager/releases/latest/download/Debet.Manager_1.0.26_x64_en-US.msi"
     }
   }
 }
